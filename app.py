@@ -192,8 +192,12 @@ with tab2:
             "Rack Focus (Focus smoothly shifts from foreground to background)"
         ])
     
-    if st.button("Generate Video Prompt"):
+if st.button("Generate Video Prompt"):
         vid_prompt = f"{camera_motion} moving through the space at {video_speed.lower()}. "
+        
+        # NEW: Hardcoded stabilization constraints
+        vid_prompt += "Camera is mounted on a perfectly smooth mechanical slider and stabilized gimbal. Zero camera shake, no handheld movement, no walking bounce, perfectly fluid cinematic motion. "
+        
         vid_prompt += f"The subjects maintain a {walk_speed}. "
         vid_prompt += f"The lens uses {depth_of_field.lower()}. "
         vid_prompt += "Maintain exact architectural geometry, original lighting, and floor reflections from the starting frame. Natural, physics-based ambient movement."
