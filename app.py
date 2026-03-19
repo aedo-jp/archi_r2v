@@ -111,4 +111,15 @@ with tab2:
         "Slow Pan Left", "Fast Pan Left",
         "Slow Pan Right", "Fast Pan Right",
         "Slow Tilt Up", "Slow Tilt Down",
-        "Slow Tracking Shot Left", "Slow Tracking
+        "Slow Tracking Shot Left", "Slow Tracking Shot Right",
+        "Aerial Overhead Drone Shot (Bird's Eye)",
+        "Horizontal Drone Fly-By",
+        "Crane Shot Sweep"
+    ])
+    
+    walk_speed = st.selectbox("Walking Speed", ["Casual stroll", "Brisk walk", "Standing still"])
+    
+    if st.button("Generate Video Prompt"):
+        vid_prompt = f"{camera_motion} moving through the space. The subjects maintain a {walk_speed}. Maintain exact architectural geometry, original lighting, and floor reflections from the starting frame."
+        st.success("Copy this prompt into Google Flow Video:")
+        st.code(vid_prompt)
