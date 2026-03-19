@@ -17,11 +17,14 @@ if "prompt_history" not in st.session_state:
 # 3. Sidebar (API Key & Export)
 with st.sidebar:
     st.header("Setup")
-    api_key = st.text_input("Enter your Gemini API Key:", type="password")
-    st.write("Get a free API key at [Google AI Studio](https://aistudio.google.com/)")
-
-    if api_key:
+    
+    # NEW: Tell Streamlit to automatically grab the key from the Secrets vault
+    try:
+        api_key = st.secrets["GEMINI_API_KEY"]
         genai.configure(api_key=api_key)
+        st.success("✅ API Key securely loaded!")
+    except KeyError:
+        st.error("API Key not found! Please add it to your Streamlit Secrets.")
         
     st.divider()
     
