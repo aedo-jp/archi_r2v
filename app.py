@@ -57,7 +57,7 @@ with tab1:
             else:
                 with st.spinner("Analyzing image physics..."):
                     try:
-                        model = genai.GenerativeModel('gemini-1.5-flash')
+                        model = genai.GenerativeModel('gemini-3.0-flash')
                         prompt = "Analyze this architectural render. Describe the primary lighting direction, the quality of the light (hard/soft, warm/cool), the main floor materials, and the perspective/camera angle. Keep it concise."
                         response = model.generate_content([prompt, image])
                         
