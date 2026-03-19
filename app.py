@@ -7,6 +7,19 @@ from datetime import datetime
 st.title("Architecture Animation Workflow")
 st.write("Upload a render, analyze its physical properties, and generate perfect prompts.")
 
+# --- NEW ADDITION: CUSTOM STYLING (Background Color: Pastel Pink) ---
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background-color: #FFC5D3;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+# -------------------------------------------------------------------
+
 # 2. Initialize Session State (Memory)
 if "analysis_text" not in st.session_state:
     st.session_state.analysis_text = ""
@@ -18,7 +31,7 @@ if "prompt_history" not in st.session_state:
 with st.sidebar:
     st.header("Setup")
     
-    # NEW: Tell Streamlit to automatically grab the key from the Secrets vault
+    # NEW: Securely load the API Key from Streamlit Secrets vault
     try:
         api_key = st.secrets["GEMINI_API_KEY"]
         genai.configure(api_key=api_key)
@@ -56,7 +69,7 @@ with tab1:
         
         if st.button("Analyze Lighting & Materials"):
             if not api_key:
-                st.error("Please enter your Gemini API Key in the sidebar first!")
+                st.error("Please enter your Gemini API Key in the sidebar/secrets first!")
             else:
                 with st.spinner("Analyzing image physics..."):
                     try:
@@ -104,7 +117,7 @@ with tab1:
         ])
         attire = st.text_input("Describe Attire", "Modern, casual business wear")
 
-    st.divider() # Visual separation line
+    st.divider()
     
     # --- SECTION 2: ENVIRONMENT & STYLE ---
     st.subheader("2. Environment & Atmosphere")
@@ -127,14 +140,14 @@ with tab1:
     with col4:
         color_grade = st.selectbox("Color Grade & Post-Processing", [
             "Standard Photorealistic (Match Original)",
-            "Cinematic (High Dynamic Range, Rich Saturation, Crisp Sharpness)",
+            "Cinematic (High Contrast, Rich Saturation, Crisp Sharpness)",
             "Moody & Dramatic (Deep Shadows, High Contrast, Desaturated)",
             "Light & Airy (Low Contrast, Bright, Soft Natural Sharpness)",
             "Film Emulation (Subtle Film Grain, Analog Colors)"
         ])
     
     # Generate Button
-    st.write("") # Just a little extra blank space before the button
+    st.write("")
     if st.button("Generate Image Prompt"):
         base_prompt = f"A high-resolution, hyper-realistic architectural photograph. "
         
@@ -192,7 +205,7 @@ with tab2:
             "Rack Focus (Focus smoothly shifts from foreground to background)"
         ])
     
-if st.button("Generate Video Prompt"):
+    if st.button("Generate Video Prompt"):
         vid_prompt = f"{camera_motion} moving through the space at {video_speed.lower()}. "
         
         # NEW: Hardcoded stabilization constraints
