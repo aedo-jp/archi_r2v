@@ -7,19 +7,6 @@ from datetime import datetime
 st.title("Architecture Animation Workflow")
 st.write("Upload a render, analyze its physical properties, and generate perfect prompts.")
 
-# --- NEW ADDITION: CUSTOM STYLING (Background Color: Pastel Pink) ---
-st.markdown(
-    """
-    <style>
-    .stApp {
-        background-color: #FFC5D3;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-# -------------------------------------------------------------------
-
 # 2. Initialize Session State (Memory)
 if "analysis_text" not in st.session_state:
     st.session_state.analysis_text = ""
@@ -31,7 +18,7 @@ if "prompt_history" not in st.session_state:
 with st.sidebar:
     st.header("Setup")
     
-    # NEW: Securely load the API Key from Streamlit Secrets vault
+    # Securely load the API Key from Streamlit Secrets vault
     try:
         api_key = st.secrets["GEMINI_API_KEY"]
         genai.configure(api_key=api_key)
@@ -208,7 +195,7 @@ with tab2:
     if st.button("Generate Video Prompt"):
         vid_prompt = f"{camera_motion} moving through the space at {video_speed.lower()}. "
         
-        # NEW: Hardcoded stabilization constraints
+        # Hardcoded stabilization constraints
         vid_prompt += "Camera is mounted on a perfectly smooth mechanical slider and stabilized gimbal. Zero camera shake, no handheld movement, no walking bounce, perfectly fluid cinematic motion. "
         
         vid_prompt += f"The subjects maintain a {walk_speed}. "
