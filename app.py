@@ -73,8 +73,12 @@ with tab1:
 
     st.header("Step 1b: Generate 'Baking' Prompt")
     
+    # --- SECTION 1: SUBJECTS (PEOPLE) ---
+    st.subheader("1. Subject Details")
     col1, col2 = st.columns(2)
+    
     with col1:
+        num_people = st.slider("Number of People", 1, 5, 2)
         placement_option = st.selectbox("Location in Scene", [
             "Foreground Center", "Foreground Left", "Foreground Right",
             "Middle-ground Center", "Middle-ground Left", "Middle-ground Right",
@@ -86,10 +90,25 @@ with tab1:
             placement = st.text_input("Describe custom location", "standing behind the glass balcony railing")
         else:
             placement = placement_option.lower()
-            
-        num_people = st.slider("Number of People", 1, 5, 2)
-        
-        # NEW: Weather & Atmosphere
+
+    with col2:
+        facing_direction = st.selectbox("Facing Direction", [
+            "walking away from the camera", 
+            "walking towards the camera", 
+            "facing left", 
+            "facing right", 
+            "looking out the window/view"
+        ])
+        attire = st.text_input("Describe Attire", "Modern, casual business wear")
+
+    st.divider() # Visual separation line
+    
+    # --- SECTION 2: ENVIRONMENT & STYLE ---
+    st.subheader("2. Environment & Atmosphere")
+    col3, col4 = st.columns(2)
+    
+    with col3:
+        time_of_day = st.selectbox("Time of Day", ["Match Original Image", "Morning", "Midday", "Golden Hour/Sunset", "Night"])
         weather = st.selectbox("Weather & Atmosphere", [
             "Clear / No Weather Effects",
             "Light Rain and Wet Surfaces",
@@ -102,17 +121,7 @@ with tab1:
             "Overcast / Diffused Sky"
         ])
         
-    with col2:
-        facing_direction = st.selectbox("Facing Direction", [
-            "walking away from the camera", 
-            "walking towards the camera", 
-            "facing left", 
-            "facing right", 
-            "looking out the window/view"
-        ])
-        time_of_day = st.selectbox("Time of Day", ["Match Original Image", "Morning", "Midday", "Golden Hour/Sunset", "Night"])
-        
-        # NEW: Image Enhancement / Post-Processing
+    with col4:
         color_grade = st.selectbox("Color Grade & Post-Processing", [
             "Standard Photorealistic (Match Original)",
             "Cinematic (High Dynamic Range, Rich Saturation, Crisp Sharpness)",
@@ -120,9 +129,9 @@ with tab1:
             "Light & Airy (Low Contrast, Bright, Soft Natural Sharpness)",
             "Film Emulation (Subtle Film Grain, Analog Colors)"
         ])
-        
-    attire = st.text_input("Describe Attire", "Modern, casual business wear")
     
+    # Generate Button
+    st.write("") # Just a little extra blank space before the button
     if st.button("Generate Image Prompt"):
         base_prompt = f"A high-resolution, hyper-realistic architectural photograph. "
         
@@ -150,8 +159,8 @@ with tab1:
 with tab2:
     st.header("Step 2: Animate the Baked Image")
     
-    col3, col4 = st.columns(2)
-    with col3:
+    col5, col6 = st.columns(2)
+    with col5:
         camera_motion = st.selectbox("Camera Movement", [
             "Static / No Movement",
             "Slow Dolly-In (Push In)", "Fast Dolly-In",
@@ -166,15 +175,13 @@ with tab2:
         ])
         walk_speed = st.selectbox("Walking Speed", ["Casual stroll", "Brisk walk", "Standing still"])
         
-    with col4:
-        # NEW: Video Speed
+    with col6:
         video_speed = st.selectbox("Video Speed / Framerate Style", [
             "Normal Cinematic Speed (Real-time 24fps)",
             "Slow Motion (120fps style)",
             "Fast Motion / Time-lapse"
         ])
         
-        # NEW: Depth of Field (Focus)
         depth_of_field = st.selectbox("Depth of Field (Focus)", [
             "Deep Focus (f/8+ style, entire scene is sharp)",
             "Shallow Focus (Subject is sharp, background beautifully blurred/bokeh)",
