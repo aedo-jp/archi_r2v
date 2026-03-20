@@ -148,7 +148,6 @@ with tab1:
     col3, col4 = st.columns(2)
     
     with col3:
-        # AMENDMENT: Added "Evening Party" mode
         time_of_day = st.selectbox("Time of Day / Lighting Scenario", [
             "Morning", 
             "Midday", 
@@ -195,52 +194,65 @@ with tab1:
     # Generate Button
     st.write("")
     if st.button("Generate Image Prompt"):
-        base_prompt = f"A high-resolution, hyper-realistic {scene_type.lower()} architectural photograph. "
         
-        base_prompt += "CRITICAL PERSPECTIVE LOCK: You MUST maintain the exact camera position, horizon line, focal length, and target viewpoint from the uploaded image. Do NOT shift the camera or change the composition. "
+        # --- BUILDING THE STRUCTURED PROMPT ---
         
-        # SUPERCHARGED FIXTURE LOCK & EVENING PARTY LOGIC
+        # 1. BASE AND PERSPECTIVE
+        base_prompt = f"**[BASE]**\n- A high-resolution, hyper-realistic {scene_type.lower()} architectural photograph.\n\n"
+        
+        base_prompt += "**[CAMERA & PERSPECTIVE]**\n- CRITICAL PERSPECTIVE LOCK: You MUST maintain the exact camera position, horizon line, focal length, and target viewpoint from the uploaded image. Do NOT shift the camera or change the composition.\n\n"
+        
+        # 2. LIGHTING & TIME
+        base_prompt += "**[LIGHTING & FIXTURES]**\n"
         if time_of_day == "Evening Party (Moody, Downlights OFF)":
-            base_prompt += "The time of day is night, featuring an intimate, moody evening party atmosphere. "
-            base_prompt += "CRITICAL FIXTURE LOCK & LIGHTING RULE: All overhead ceiling downlights, recessed lights, and bright spotlights MUST be completely turned OFF. The space is illuminated exclusively by existing low-level ambient lighting, floor lamps, wall sconces, and indirect cove lighting present in the original design. Do NOT invent new party lights, string lights, or disco balls. Maintain original fixture geometry perfectly, just change which ones are emitting light to create a dim, moody environment. "
+            base_prompt += "- The time of day is night, featuring an intimate, moody evening party atmosphere.\n"
+            base_prompt += "- CRITICAL FIXTURE LOCK & LIGHTING RULE: All overhead ceiling downlights, recessed lights, and bright spotlights MUST be completely turned OFF. The space is illuminated exclusively by existing low-level ambient lighting, floor lamps, wall sconces, and indirect cove lighting present in the original design. Do NOT invent new party lights, string lights, or disco balls. Maintain original fixture geometry perfectly, just change which ones are emitting light to create a dim, moody environment.\n"
         else:
-            base_prompt += f"The time of day is {time_of_day}. "
+            base_prompt += f"- The time of day is {time_of_day}.\n"
             if time_of_day in ["Twilight / Blue Hour", "Night"]:
-                 base_prompt += "CRITICAL FIXTURE LOCK: The exact physical design, shape, and architectural style of the existing lighting fixtures MUST be strictly preserved. Do NOT alter their appearance, morph them into generic lamps, or invent new light sources. Increase the luminosity of the existing architectural lights to beautifully illuminate the space while maintaining their exact original geometry. "
+                 base_prompt += "- CRITICAL FIXTURE LOCK: The exact physical design, shape, and architectural style of the existing lighting fixtures MUST be strictly preserved. Do NOT alter their appearance, morph them into generic lamps, or invent new light sources. Increase the luminosity of the existing architectural lights to beautifully illuminate the space while maintaining their exact original geometry.\n"
             else:
                  if scene_type == "Interior":
-                     base_prompt += f"The interior is illuminated beautifully by natural {time_of_day} light streaming in through the windows, alongside balanced existing interior fixtures. The exact physical design and shape of all light fixtures MUST be strictly preserved. "
+                     base_prompt += f"- The interior is illuminated beautifully by natural {time_of_day} light streaming in through the windows, alongside balanced existing interior fixtures. The exact physical design and shape of all light fixtures MUST be strictly preserved.\n"
                  else:
-                     base_prompt += f"Utilize natural environmental light matching the {time_of_day}. Do NOT add new artificial light fixtures to the architecture. Maintain original fixture geometry perfectly. "
+                     base_prompt += f"- Utilize natural environmental light matching the {time_of_day}. Do NOT add new artificial light fixtures to the architecture. Maintain original fixture geometry perfectly.\n"
         
         if shadow_quality != "Standard realistic shadows":
-            base_prompt += f"Ensure the lighting features {shadow_quality.lower()}. "
+            base_prompt += f"- Ensure the lighting features {shadow_quality.lower()}.\n"
+        base_prompt += "\n"
             
+        # 3. GEOMETRY
+        base_prompt += "**[PHYSICAL GEOMETRY]**\n"
         if st.session_state.analysis_text:
-            base_prompt += f"The precise physical {scene_type.lower()} scene consists of: {st.session_state.analysis_text}. "
+            base_prompt += f"- The precise physical {scene_type.lower()} scene consists of: {st.session_state.analysis_text}\n\n"
             
+        # 4. SUBJECTS
+        base_prompt += "**[SUBJECTS & PEOPLE]**\n"
         if repopulate_rendered_people:
-            base_prompt += "Integrated seamlessly into the scene: Identify any existing, CGI-looking rendered people figures present in the original geometry. Repopulate and replace them with high-end, photorealistic human subjects of the same gender and attire style, maintaining their exact positions, poses, and locations perfectly. "
+            base_prompt += "- Integrated seamlessly into the scene: Identify any existing, CGI-looking rendered people figures present in the original geometry. Repopulate and replace them with high-end, photorealistic human subjects of the same gender and attire style, maintaining their exact positions, poses, and locations perfectly.\n"
+            base_prompt += "- The human subjects are lit naturally by the environment, casting accurate soft contact shadows.\n\n"
         elif num_people > 0:
-            base_prompt += f"Integrated seamlessly {placement} are {num_people} people wearing {attire}, {facing_direction}. "
+            base_prompt += f"- Integrated seamlessly {placement} are {num_people} people wearing {attire}, {facing_direction}.\n"
+            base_prompt += "- The human subjects are lit naturally by the environment, casting accurate soft contact shadows.\n\n"
+        else:
+            base_prompt += "- No human subjects present. Focus purely on the architecture.\n\n"
         
-        if repopulate_rendered_people or num_people > 0:
-            base_prompt += f"The human subjects are lit naturally by the environment, casting accurate soft contact shadows. "
-        
-        # STRICT ATMOSPHERE RULES
+        # 5. ATMOSPHERE & RENDERING
+        base_prompt += "**[ATMOSPHERE & RENDERING]**\n"
         if weather != "Clear / Crisp Air":
             if scene_type == "Interior":
-                base_prompt += f"The view outside the windows and the quality of the light reflect {weather.lower()} conditions. "
+                base_prompt += f"- The view outside the windows and the quality of the light reflect {weather.lower()} conditions.\n"
             else:
-                base_prompt += f"The atmospheric conditions feature {weather.lower()}. CRITICAL: Atmospheric effects like mist, haze, or fog must strictly remain volumetric light scatter and MUST NOT alter, morph, or redesign the physical geometry of the building or its lighting fixtures. "
+                base_prompt += f"- The atmospheric conditions feature {weather.lower()}. CRITICAL: Atmospheric effects like mist, haze, or fog must strictly remain volumetric light scatter and MUST NOT alter, morph, or redesign the physical geometry of the building or its lighting fixtures.\n"
         
         if rendering_style != "Standard Photorealistic PBR":
-            base_prompt += f"Rendered utilizing {rendering_style.lower()} to ensure natural light bounce. "
+            base_prompt += f"- Rendered utilizing {rendering_style.lower()} to ensure natural light bounce.\n"
             
         if color_grade != "Natural Realism":
-            base_prompt += f"The final image should be color graded as: {color_grade}."
+            base_prompt += f"- The final image should be color graded as: {color_grade}.\n"
             
         st.success("Copy this prompt into your Image Generator:")
+        # Streamlit st.code handles multi-line strings beautifully
         st.code(base_prompt)
         
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -281,11 +293,15 @@ with tab2:
         ])
     
     if st.button("Generate Video Prompt"):
-        vid_prompt = f"{camera_motion} moving through the space at {video_speed.lower()}. "
-        vid_prompt += "Camera is mounted on a perfectly smooth mechanical slider and stabilized gimbal. Zero camera shake, no handheld movement, no walking bounce, perfectly fluid cinematic motion. "
-        vid_prompt += f"The subjects maintain a {walk_speed}. "
-        vid_prompt += f"The lens uses {depth_of_field.lower()}. "
-        vid_prompt += "Maintain exact architectural geometry, original lighting, and floor reflections from the starting frame. Natural, physics-based ambient movement."
+        # Structured Video Prompt
+        vid_prompt = f"**[CAMERA MOVEMENT]**\n- {camera_motion} moving through the space at {video_speed.lower()}.\n"
+        vid_prompt += "- Camera is mounted on a perfectly smooth mechanical slider and stabilized gimbal. Zero camera shake, no handheld movement, no walking bounce, perfectly fluid cinematic motion.\n\n"
+        
+        vid_prompt += f"**[SUBJECT MOTION]**\n- The subjects maintain a {walk_speed}.\n\n"
+        
+        vid_prompt += f"**[LENS & FOCUS]**\n- The lens uses {depth_of_field.lower()}.\n\n"
+        
+        vid_prompt += "**[PERSISTENCE & PHYSICS]**\n- Maintain exact architectural geometry, original lighting, and floor reflections from the starting frame. Natural, physics-based ambient movement."
         
         st.success("Copy this prompt into Google Flow Video:")
         st.code(vid_prompt)
