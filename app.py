@@ -5,7 +5,7 @@ from datetime import datetime
 
 # 1. App Title and Setup
 st.title("Architecture Animation Workflow")
-st.write("Upload a render, analyze its physical properties, and generate perfect prompts.")
+st.write("Upload a render, extract its physical geometry, and build perfect generative prompts.")
 
 # 2. Initialize Session State (Memory)
 if "analysis_text" not in st.session_state:
@@ -45,7 +45,7 @@ tab1, tab2 = st.tabs(["Step 1: Bake (Image)", "Step 2: Animate (Video)"])
 
 # --- TAB 1: IMAGE GENERATION ---
 with tab1:
-    st.header("Step 1a: Analyze Original Render")
+    st.header("Step 1a: Extract 'Blank Slate' Geometry")
     
     uploaded_file = st.file_uploader("Upload your clean architectural render (JPG/PNG)", type=["jpg", "jpeg", "png"])
     
@@ -53,23 +53,32 @@ with tab1:
         image = Image.open(uploaded_file)
         st.image(image, caption="Uploaded Render", use_container_width=True)
         
-        if st.button("Analyze Lighting & Materials"):
+        if st.button("Extract Physical Geometry"):
             if not api_key:
                 st.error("Please enter your Gemini API Key in the sidebar/secrets first!")
             else:
-                with st.spinner("Analyzing image physics..."):
+                with st.spinner("Extracting blank slate geometry and materials..."):
                     try:
                         model = genai.GenerativeModel('gemini-2.5-flash')
-                        prompt = "Analyze this architectural render. Describe the primary lighting direction, the quality of the light (hard/soft, warm/cool), the main floor materials, and the perspective/camera angle. Keep it concise."
-                        response = model.generate_content([prompt, image])
+                        
+                        # NEW: The highly specific, conflict-free analysis prompt
+                        vision_prompt = """Please analyze this architectural render. I want to use your analysis to generate a new, highly photorealistic version of this exact building, but I will be changing the lighting and time of day myself. 
+                        Please provide a detailed, comma-separated descriptive prompt focusing strictly on the following:
+                        - The camera angle, and framing.
+                        - The architectural style, geometry, and structural forms.
+                        - Hyper-specific descriptions of the building materials and textures.
+                        - The static landscaping and environment (trees, terrain, roads).
+                        CRITICAL: Do NOT include any descriptions of the current lighting, shadows, time of day, sky, or weather conditions in your output prompt. Strip all atmospheric details away so I am left with a 'blank slate' physical description of the scene."""
+                        
+                        response = model.generate_content([vision_prompt, image])
                         
                         st.session_state.analysis_text = response.text
-                        st.success("Analysis Complete!")
+                        st.success("Geometry Extraction Complete!")
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
         
     if st.session_state.analysis_text:
-        st.info("**AI Image Analysis:**\n" + st.session_state.analysis_text)
+        st.info("**Extracted 'Blank Slate' Geometry:**\n" + st.session_state.analysis_text)
 
     st.divider()
 
@@ -80,7 +89,8 @@ with tab1:
     col1, col2 = st.columns(2)
     
     with col1:
-        num_people = st.slider("Number of People", 1, 5, 2)
+        # NEW: Slider from 0 to 10
+        num_people = st.slider("Number of People", 0, 10, 2)
         placement_option = st.selectbox("Location in Scene", [
             "Foreground Center", "Foreground Left", "Foreground Right",
             "Middle-ground Center", "Middle-ground Left", "Middle-ground Right",
@@ -110,7 +120,7 @@ with tab1:
     col3, col4 = st.columns(2)
     
     with col3:
-        time_of_day = st.selectbox("Time of Day", ["Match Original Image", "Morning", "Midday", "Golden Hour/Sunset", "Night"])
+        time_of_day = st.selectbox("Time of Day", ["Morning", "Midday", "Golden Hour/Sunset", "Night", "Overcast Daytime"])
         weather = st.selectbox("Weather & Atmosphere", [
             "Clear / No Weather Effects",
             "Light Rain and Wet Surfaces",
@@ -125,7 +135,7 @@ with tab1:
         
     with col4:
         color_grade = st.selectbox("Color Grade & Post-Processing", [
-            "Standard Photorealistic (Match Original)",
+            "Standard Photorealistic",
             "Cinematic (High Contrast, Rich Saturation, Crisp Sharpness)",
             "Moody & Dramatic (Deep Shadows, High Contrast, Desaturated)",
             "Light & Airy (Low Contrast, Bright, Soft Natural Sharpness)",
@@ -137,30 +147,24 @@ with tab1:
     if st.button("Generate Image Prompt"):
         base_prompt = f"A high-resolution, hyper-realistic architectural photograph. "
         
-        # NEW LOGIC: Injecting Time of Day overrides
-        if time_of_day != "Match Original Image":
-            base_prompt += f"The time of day is explicitly {time_of_day}. The lighting and atmosphere MUST reflect {time_of_day} conditions. "
+        # 1. Establish the Atmosphere FIRST
+        base_prompt += f"The time of day is exclusively {time_of_day}, featuring highly realistic {time_of_day} lighting, physically accurate global illumination, and matching shadows. "
         
+        # 2. Inject the Blank Slate Geometry SECOND
         if st.session_state.analysis_text:
-            if time_of_day != "Match Original Image":
-                base_prompt += f"The base spatial environment and materials are as follows (IGNORE original lighting, apply {time_of_day} lighting instead): {st.session_state.analysis_text}. "
-            else:
-                base_prompt += f"The base environment and lighting features: {st.session_state.analysis_text}. "
-                
-        base_prompt += "Crucially, upgrade and render all described materials with hyper-realistic, natural textures and physically based rendering (PBR) quality. "
+            base_prompt += f"The physical scene is structured as follows: {st.session_state.analysis_text}. "
+            base_prompt += "Crucially, render all described materials with hyper-realistic, natural textures and physically based rendering (PBR) quality. "
         
-        base_prompt += f"Integrated seamlessly {placement} are {num_people} people wearing {attire}. "
-        base_prompt += f"They are {facing_direction}. "
+        # 3. Add People (Only if num_people > 0)
+        if num_people > 0:
+            base_prompt += f"Integrated seamlessly {placement} are {num_people} people wearing {attire}. "
+            base_prompt += f"They are {facing_direction}. "
+            base_prompt += f"The lighting on the subjects must perfectly match the {time_of_day} environment, casting accurate diffuse contact shadows and material reflections. "
         
-        # Matching subject lighting to the correct time of day
-        if time_of_day != "Match Original Image":
-            base_prompt += f"The lighting on the people must perfectly match the newly established {time_of_day} environmental lighting, casting accurate diffuse contact shadows and material reflections. "
-        else:
-            base_prompt += f"The lighting on the people must perfectly match the described environmental lighting, casting diffuse contact shadows and accurate material reflections. "
-        
+        # 4. Add Weather and Finishing Grades
         if weather != "Clear / No Weather Effects":
             base_prompt += f"The atmospheric conditions feature {weather.lower()}, interacting naturally with the light and architecture. "
-        if color_grade != "Standard Photorealistic (Match Original)":
+        if color_grade != "Standard Photorealistic":
             base_prompt += f"The final image should be color graded as: {color_grade}."
             
         st.success("Copy this prompt into your Image Generator:")
