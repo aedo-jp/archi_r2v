@@ -43,6 +43,11 @@ tab1, tab2 = st.tabs(["Step 1: Bake (Image)", "Step 2: Animate (Video)"])
 
 # --- TAB 1: IMAGE GENERATION ---
 with tab1:
+    
+    # NEW: Scene Type Toggle
+    scene_type = st.radio("Select Scene Type:", ["Exterior", "Interior"], horizontal=True)
+    st.divider()
+    
     st.header("Step 1a: Extract Simplified Geometry")
     
     uploaded_file = st.file_uploader("Upload your clean architectural render (JPG/PNG)", type=["jpg", "jpeg", "png"])
@@ -55,13 +60,18 @@ with tab1:
             if not api_key:
                 st.error("Please enter your Gemini API Key in the sidebar/secrets first!")
             else:
-                with st.spinner("Extracting simplified blank slate geometry..."):
+                with st.spinner(f"Extracting simplified {scene_type.lower()} geometry..."):
                     try:
                         model = genai.GenerativeModel('gemini-2.5-flash')
                         
-                        vision_prompt = """Analyze this architectural render. Provide a concise, simplistic, comma-separated list describing ONLY the core architectural form, key building materials, and key landscaping features. 
-                        CRITICAL: Keep it extremely brief (under 40 words). Do NOT include any descriptions of lighting, shadows, time of day, sky, or weather. I need a simplified blank slate."""
-                        
+                        # NEW LOGIC: Dynamic analysis prompt based on scene type
+                        if scene_type == "Exterior":
+                            vision_prompt = """Analyze this architectural render. Provide a concise, simplistic, comma-separated list describing ONLY the core architectural form, key building materials, and key landscaping features. 
+                            CRITICAL: Keep it extremely brief (under 40 words). Do NOT include any descriptions of lighting, shadows, time of day, sky, or weather. I need a simplified blank slate."""
+                        else:
+                            vision_prompt = """Analyze this interior architectural render. Provide a concise, simplistic, comma-separated list describing ONLY the spatial layout, key interior floor/wall materials, and major structural furniture or built-ins. 
+                            CRITICAL: Keep it extremely brief (under 40 words). Do NOT include any descriptions of lighting, shadows, time of day, or weather. I need a simplified blank slate of the physical room."""
+                            
                         response = model.generate_content([vision_prompt, image])
                         
                         st.session_state.analysis_text = response.text
@@ -90,7 +100,7 @@ with tab1:
         ])
         
         if placement_option == "Other (Custom Description)":
-            placement = st.text_input("Describe custom location", "standing behind the glass balcony railing")
+            placement = st.text_input("Describe custom location", "sitting on the sofa" if scene_type == "Interior" else "standing near the entrance")
         else:
             placement = placement_option.lower()
 
@@ -150,32 +160,39 @@ with tab1:
     # Generate Button
     st.write("")
     if st.button("Generate Image Prompt"):
-        base_prompt = f"A high-resolution, hyper-realistic architectural photograph. "
+        base_prompt = f"A high-resolution, hyper-realistic {scene_type.lower()} architectural photograph. "
         
         # 1. Time of Day and Strict Lighting Control
         base_prompt += f"The time of day is {time_of_day}. "
         
-        # NEW LOGIC: Enforce existing architectural lighting
         if time_of_day in ["Twilight / Blue Hour", "Night"]:
-             base_prompt += "CRITICAL: Utilize ONLY the existing architectural lighting fixtures present in the original design. Do NOT invent, hallucinate, or add any new light sources, streetlamps, or random fixtures. Instead, beautifully increase the luminosity and glow of the existing architectural lights to illuminate the space. "
+             base_prompt += "CRITICAL: Utilize ONLY the existing architectural lighting fixtures present in the original design. Do NOT invent, hallucinate, or add any new light sources. Instead, beautifully increase the luminosity and glow of the existing architectural lights to illuminate the space. "
         else:
-             base_prompt += "Utilize natural environmental light matching the time of day. Do NOT add new artificial light fixtures to the architecture. "
+             # NEW: Natural light logic for interiors
+             if scene_type == "Interior":
+                 base_prompt += f"The interior is illuminated beautifully by natural {time_of_day} light streaming in through the windows, alongside balanced existing interior fixtures. "
+             else:
+                 base_prompt += f"Utilize natural environmental light matching the {time_of_day}. Do NOT add new artificial light fixtures to the architecture. "
         
         if shadow_quality != "Standard realistic shadows":
             base_prompt += f"Ensure the lighting features {shadow_quality.lower()}. "
             
         # 2. Blank Slate Geometry
         if st.session_state.analysis_text:
-            base_prompt += f"The physical scene consists of: {st.session_state.analysis_text}. "
+            base_prompt += f"The physical {scene_type.lower()} scene consists of: {st.session_state.analysis_text}. "
             
         # 3. People (If any)
         if num_people > 0:
             base_prompt += f"Integrated seamlessly {placement} are {num_people} people wearing {attire}, {facing_direction}. "
-            base_prompt += f"The subjects are lit naturally by the {time_of_day} environment, casting accurate soft contact shadows. "
+            base_prompt += f"The subjects are lit naturally by the environment, casting accurate soft contact shadows. "
         
         # 4. Atmosphere & Rendering
         if weather != "Clear / Crisp Air":
-            base_prompt += f"The atmospheric conditions feature {weather.lower()}. "
+            # NEW: Interior weather logic
+            if scene_type == "Interior":
+                base_prompt += f"The view outside the windows and the quality of the light reflect {weather.lower()} conditions. "
+            else:
+                base_prompt += f"The atmospheric conditions feature {weather.lower()}. "
         
         if rendering_style != "Standard Photorealistic PBR":
             base_prompt += f"Rendered utilizing {rendering_style.lower()} to ensure natural light bounce. "
