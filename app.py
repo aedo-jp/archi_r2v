@@ -59,7 +59,6 @@ with tab1:
                     try:
                         model = genai.GenerativeModel('gemini-2.5-flash')
                         
-                        # NEW: Highly simplified, concise analysis prompt
                         vision_prompt = """Analyze this architectural render. Provide a concise, simplistic, comma-separated list describing ONLY the core architectural form, key building materials, and key landscaping features. 
                         CRITICAL: Keep it extremely brief (under 40 words). Do NOT include any descriptions of lighting, shadows, time of day, sky, or weather. I need a simplified blank slate."""
                         
@@ -107,23 +106,13 @@ with tab1:
 
     st.divider()
     
-    # --- SECTION 2: ENVIRONMENT & STYLE (OVERHAULED) ---
+    # --- SECTION 2: ENVIRONMENT & STYLE ---
     st.subheader("2. Environment, Lighting & Rendering")
     col3, col4 = st.columns(2)
     
     with col3:
         time_of_day = st.selectbox("Time of Day", ["Morning", "Midday", "Golden Hour/Sunset", "Twilight / Blue Hour", "Night"])
         
-        # NEW: Granular Light Source Control
-        light_source = st.selectbox("Primary Light Source", [
-            "Natural ambient sunlight/skylight",
-            "Soft ambient moonlight",
-            "Warm interior lights spilling out with ambient city glow",
-            "Low-level landscape lighting and warm architectural uplighting",
-            "Harsh directional spotlighting"
-        ])
-        
-        # UPGRADED: Atmosphere with subtle mist/haze options
         weather = st.selectbox("Atmosphere & Weather", [
             "Clear / Crisp Air",
             "Slight Nighttime Mist (Softens lights)",
@@ -137,7 +126,6 @@ with tab1:
         ])
         
     with col4:
-        # NEW: Shadow Quality Modifiers
         shadow_quality = st.selectbox("Shadow Quality", [
             "Standard realistic shadows",
             "Soft, feathered shadows with low contrast",
@@ -145,7 +133,6 @@ with tab1:
             "Harsh, high-contrast crisp shadows"
         ])
         
-        # NEW: Rendering Engine Terminology
         rendering_style = st.selectbox("Rendering Engine & Camera Tech", [
             "Standard Photorealistic PBR",
             "Global Illumination & Ambient Occlusion",
@@ -165,11 +152,17 @@ with tab1:
     if st.button("Generate Image Prompt"):
         base_prompt = f"A high-resolution, hyper-realistic architectural photograph. "
         
-        # 1. Lighting and Time
+        # 1. Time of Day and Strict Lighting Control
         base_prompt += f"The time of day is {time_of_day}. "
-        base_prompt += f"The scene is illuminated primarily by {light_source.lower()}. "
+        
+        # NEW LOGIC: Enforce existing architectural lighting
+        if time_of_day in ["Twilight / Blue Hour", "Night"]:
+             base_prompt += "CRITICAL: Utilize ONLY the existing architectural lighting fixtures present in the original design. Do NOT invent, hallucinate, or add any new light sources, streetlamps, or random fixtures. Instead, beautifully increase the luminosity and glow of the existing architectural lights to illuminate the space. "
+        else:
+             base_prompt += "Utilize natural environmental light matching the time of day. Do NOT add new artificial light fixtures to the architecture. "
+        
         if shadow_quality != "Standard realistic shadows":
-            base_prompt += f"The lighting features {shadow_quality.lower()}. "
+            base_prompt += f"Ensure the lighting features {shadow_quality.lower()}. "
             
         # 2. Blank Slate Geometry
         if st.session_state.analysis_text:
