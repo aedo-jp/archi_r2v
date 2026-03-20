@@ -18,7 +18,6 @@ if "prompt_history" not in st.session_state:
 with st.sidebar:
     st.header("Setup")
     
-    # Securely load the API Key from Streamlit Secrets vault
     try:
         api_key = st.secrets["GEMINI_API_KEY"]
         genai.configure(api_key=api_key)
@@ -138,15 +137,27 @@ with tab1:
     if st.button("Generate Image Prompt"):
         base_prompt = f"A high-resolution, hyper-realistic architectural photograph. "
         
+        # NEW LOGIC: Injecting Time of Day overrides
+        if time_of_day != "Match Original Image":
+            base_prompt += f"The time of day is explicitly {time_of_day}. The lighting and atmosphere MUST reflect {time_of_day} conditions. "
+        
         if st.session_state.analysis_text:
-             base_prompt += f"The base environment features: {st.session_state.analysis_text}. "
-             base_prompt += "Crucially, upgrade and render all described materials with hyper-realistic, natural textures and physically based rendering (PBR) quality. "
+            if time_of_day != "Match Original Image":
+                base_prompt += f"The base spatial environment and materials are as follows (IGNORE original lighting, apply {time_of_day} lighting instead): {st.session_state.analysis_text}. "
+            else:
+                base_prompt += f"The base environment and lighting features: {st.session_state.analysis_text}. "
+                
+        base_prompt += "Crucially, upgrade and render all described materials with hyper-realistic, natural textures and physically based rendering (PBR) quality. "
         
         base_prompt += f"Integrated seamlessly {placement} are {num_people} people wearing {attire}. "
         base_prompt += f"They are {facing_direction}. "
-        base_prompt += f"The lighting on the people must perfectly match the described environmental lighting, casting diffuse contact shadows and accurate material reflections. "
         
-        # Inject Weather and Grading
+        # Matching subject lighting to the correct time of day
+        if time_of_day != "Match Original Image":
+            base_prompt += f"The lighting on the people must perfectly match the newly established {time_of_day} environmental lighting, casting accurate diffuse contact shadows and material reflections. "
+        else:
+            base_prompt += f"The lighting on the people must perfectly match the described environmental lighting, casting diffuse contact shadows and accurate material reflections. "
+        
         if weather != "Clear / No Weather Effects":
             base_prompt += f"The atmospheric conditions feature {weather.lower()}, interacting naturally with the light and architecture. "
         if color_grade != "Standard Photorealistic (Match Original)":
@@ -194,10 +205,7 @@ with tab2:
     
     if st.button("Generate Video Prompt"):
         vid_prompt = f"{camera_motion} moving through the space at {video_speed.lower()}. "
-        
-        # Hardcoded stabilization constraints
         vid_prompt += "Camera is mounted on a perfectly smooth mechanical slider and stabilized gimbal. Zero camera shake, no handheld movement, no walking bounce, perfectly fluid cinematic motion. "
-        
         vid_prompt += f"The subjects maintain a {walk_speed}. "
         vid_prompt += f"The lens uses {depth_of_field.lower()}. "
         vid_prompt += "Maintain exact architectural geometry, original lighting, and floor reflections from the starting frame. Natural, physics-based ambient movement."
