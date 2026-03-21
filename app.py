@@ -36,6 +36,14 @@ desc_time = {
     "Evening Party (Moody, Downlights OFF)": "Turns off harsh overhead lights, relying on warm, low-level ambient fixtures (lamps, sconces) for an intimate, moody vibe."
 }
 
+# NEW DICTIONARY: Artificial Light Temperatures
+desc_artificial_light = {
+    "Match Natural Environment (Default)": "Lets the AI decide the interior fixture color based on the time of day.",
+    "Warm White (2700K - 3000K)": "Traditional cozy, yellowish-orange glow. Common in hospitality, residential, and restaurants.",
+    "Neutral White (4000K)": "Clean, crisp, pure white light. Industry standard for modern offices, retail, and contemporary kitchens.",
+    "Cool Daylight White (5000K - 6000K)": "Very bright, slightly bluish-white light. Used in hospitals, galleries, or ultra-modern minimalist spaces."
+}
+
 desc_weather = {
     "Clear / Crisp Air": "Sharp, high-contrast visibility with no atmospheric interference. Best for clean architectural showcases.",
     "Slight Nighttime Mist (Softens lights)": "Adds a very subtle, cinematic glow (halation) around light sources. Excellent for moody night renders.",
@@ -245,6 +253,11 @@ with tab1:
         st.caption(f"💡 *{desc_time[time_of_day]}*")
         st.write("") 
         
+        # NEW UI ELEMENT: Artificial Light Color Temp
+        artificial_light = st.selectbox("Artificial Lighting Color Temperature", list(desc_artificial_light.keys()))
+        st.caption(f"💡 *{desc_artificial_light[artificial_light]}*")
+        st.write("")
+        
         weather = st.selectbox("Atmosphere & Weather", list(desc_weather.keys()))
         st.caption(f"💡 *{desc_weather[weather]}*")
         st.write("")
@@ -269,21 +282,22 @@ with tab1:
         
         clean_time = time_of_day.split(" (")[0]
         clean_weather = weather.split(" (")[0]
+        clean_artificial = artificial_light.split(" (")[0]
         
         # --- BUILDING THE STRUCTURED PROMPT WITH REFERENCE LANGUAGE ---
         
-        # 1. BASE AND PERSPECTIVE (Now integrating the reference language)
+        # 1. BASE AND PERSPECTIVE
         base_prompt = f"**[BASE]**\n- Treat the uploaded image as a compositional reference only and reconstruct it as a high-fidelity real-world {scene_type.lower()} photograph.\n"
         base_prompt += "- Replace all illustrative, stylized, or synthetic CGI features with physically plausible forms and proportions.\n"
         base_prompt += "- The final image should read unmistakably as a candid or editorial photograph captured by a real camera, not a digital illustration or render.\n\n"
         
-        # 2. LIGHTING & FIXTURES (Integrating "accurate reflections" and "shadow falloff")
+        # 2. LIGHTING & FIXTURES
         base_prompt += "**[LIGHTING & FIXTURES]**\n"
         if time_of_day == "Evening Party (Moody, Downlights OFF)":
             base_prompt += "- The lighting is an intimate, moody evening party atmosphere at night.\n"
             base_prompt += "- All overhead ceiling downlights and bright spotlights are completely turned OFF. The space is illuminated beautifully by the existing low-level ambient lighting, floor lamps, and indirect cove lighting present in the design. Do not add string lights or party decor.\n"
         else:
-            base_prompt += f"- The lighting scenario is {clean_time}.\n"
+            base_prompt += f"- The environmental/natural lighting scenario is {clean_time}.\n"
             if "Night" in time_of_day or "Twilight" in time_of_day:
                  base_prompt += "- Maintain the exact physical design of the existing lighting fixtures. Do not alter their shape. Beautifully increase the luminosity and glow of the existing architectural lights to illuminate the space.\n"
             else:
@@ -292,7 +306,10 @@ with tab1:
                  else:
                      base_prompt += f"- Utilize natural environmental light matching the {clean_time.lower()}. Maintain the existing fixture geometry perfectly without adding new artificial lights.\n"
         
-        # Apply universal real-world lighting characteristics
+        # NEW INJECTION: Artificial Lighting Color Temperature
+        if clean_artificial != "Match Natural Environment":
+            base_prompt += f"- CRITICAL COLOR TEMPERATURE: Ensure that all artificial interior lighting fixtures (such as pendant globes, downlights, and cove lighting) specifically emit a {clean_artificial.lower()} color temperature.\n"
+
         base_prompt += "- Apply natural shadow falloff, accurate reflections, and subtle exposure variation across the scene.\n"
         
         clean_render = rendering_style.split(" (")[0]
@@ -304,7 +321,7 @@ with tab1:
             base_prompt += f"- Ensure the lighting features {clean_shadow.lower()}.\n"
         base_prompt += "\n"
             
-        # 3. GEOMETRY & MATERIALS (Integrating "true-to-life textures" and "surface imperfections")
+        # 3. GEOMETRY & MATERIALS
         base_prompt += "**[PHYSICAL GEOMETRY & MATERIALS]**\n"
         if st.session_state.analysis_text:
             base_prompt += f"- The precise physical {scene_type.lower()} scene consists of: {st.session_state.analysis_text}\n"
@@ -317,7 +334,7 @@ with tab1:
         else:
             base_prompt += "- Retain all original architectural materials perfectly. Apply natural surface imperfections and true-to-life textures (wood, metal, plastic, glass, stone as applicable) to elevate them from CGI to reality.\n\n"
             
-        # 4. SUBJECTS (Integrating "realistic human anatomy")
+        # 4. SUBJECTS
         if repopulate_rendered_people:
             base_prompt += "**[SUBJECTS & PEOPLE: REPOPULATE]**\n"
             base_prompt += "- Identify all people currently present in the original image. Paint over them entirely with high-end, photorealistic human subjects.\n"
@@ -333,7 +350,7 @@ with tab1:
         else:
             base_prompt += "**[SUBJECTS & PEOPLE]**\n- No human subjects present. Focus purely on the architecture.\n\n"
         
-        # 5. ATMOSPHERE & CAMERA SENSOR (Integrating the Camera Characteristics)
+        # 5. ATMOSPHERE & CAMERA SENSOR
         base_prompt += "**[ATMOSPHERE & CAMERA]**\n"
         
         if clean_weather != "Clear / Crisp Air":
@@ -342,7 +359,6 @@ with tab1:
             else:
                 base_prompt += f"- The atmospheric conditions feature {clean_weather.lower()}.\n"
         
-        # Inject the real camera characteristics to kill the CGI look
         base_prompt += "- Introduce real camera characteristics such as subtle depth of field, focal length compression, mild lens imperfections, and sensor grain to ground the image in reality.\n"
         
         clean_color = color_grade.split(" (")[0]
