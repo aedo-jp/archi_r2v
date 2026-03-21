@@ -36,7 +36,7 @@ desc_time = {
     "Evening Party (Moody, Downlights OFF)": "Turns off harsh overhead lights, relying on warm, low-level ambient fixtures (lamps, sconces) for an intimate, moody vibe."
 }
 
-# NEW DICTIONARY: Artificial Light Temperatures
+# Artificial Light Temperatures
 desc_artificial_light = {
     "Match Natural Environment (Default)": "Lets the AI decide the interior fixture color based on the time of day.",
     "Warm White (2700K - 3000K)": "Traditional cozy, yellowish-orange glow. Common in hospitality, residential, and restaurants.",
@@ -253,7 +253,6 @@ with tab1:
         st.caption(f"💡 *{desc_time[time_of_day]}*")
         st.write("") 
         
-        # NEW UI ELEMENT: Artificial Light Color Temp
         artificial_light = st.selectbox("Artificial Lighting Color Temperature", list(desc_artificial_light.keys()))
         st.caption(f"💡 *{desc_artificial_light[artificial_light]}*")
         st.write("")
@@ -306,7 +305,6 @@ with tab1:
                  else:
                      base_prompt += f"- Utilize natural environmental light matching the {clean_time.lower()}. Maintain the existing fixture geometry perfectly without adding new artificial lights.\n"
         
-        # NEW INJECTION: Artificial Lighting Color Temperature
         if clean_artificial != "Match Natural Environment":
             base_prompt += f"- CRITICAL COLOR TEMPERATURE: Ensure that all artificial interior lighting fixtures (such as pendant globes, downlights, and cove lighting) specifically emit a {clean_artificial.lower()} color temperature.\n"
 
@@ -334,18 +332,19 @@ with tab1:
         else:
             base_prompt += "- Retain all original architectural materials perfectly. Apply natural surface imperfections and true-to-life textures (wood, metal, plastic, glass, stone as applicable) to elevate them from CGI to reality.\n\n"
             
-        # 4. SUBJECTS
+        # 4. SUBJECTS (UPDATED: Inferring demographics before inventing)
         if repopulate_rendered_people:
             base_prompt += "**[SUBJECTS & PEOPLE: REPOPULATE]**\n"
             base_prompt += "- Identify all people currently present in the original image. Paint over them entirely with high-end, photorealistic human subjects.\n"
-            base_prompt += "- Apply realistic human anatomy, natural surface imperfections, and true-to-life textures for skin, fabric, and hair. Ensure all facial features are accurately reproduced in a high level of photographic detail.\n"
+            base_prompt += "- CRITICAL INSTRUCTION: Analyze the visual cues of the original figures (e.g., hair length, clothing style, skirts vs. trousers, body shape) to infer their intended demographic and gender. Preserve these specific demographics perfectly in the new subjects.\n"
+            base_prompt += "- Apply realistic human anatomy, natural surface imperfections, and true-to-life textures for skin, fabric, and hair. Generate completely new, highly detailed photorealistic faces for every person. Do not attempt to reproduce the original low-quality faces; instead, invent natural, lifelike features that match their inferred demographic, pose, and lighting.\n"
             base_prompt += "- Maintain the exact positions, scale, and locations of every person exactly as they appear in the original render.\n"
             base_prompt += f"- The human subjects must be lit naturally in conjunction with the selected {clean_time.lower()} environment, casting accurate contact shadows.\n\n"
             
         elif num_people > 0:
             base_prompt += "**[SUBJECTS & PEOPLE: ADD]**\n"
             base_prompt += f"- Integrated seamlessly {placement} are {num_people} people wearing {attire}, {facing_direction}.\n"
-            base_prompt += "- Apply realistic human anatomy, natural surface imperfections, and true-to-life textures for skin, fabric, and hair. Ensure all facial features are accurately reproduced in a high level of photographic detail.\n"
+            base_prompt += "- Apply realistic human anatomy, natural surface imperfections, and true-to-life textures for skin, fabric, and hair. Generate completely new, highly detailed photorealistic faces for every person.\n"
             base_prompt += f"- The human subjects must be lit naturally in conjunction with the selected {clean_time.lower()} environment, casting accurate contact shadows.\n\n"
         else:
             base_prompt += "**[SUBJECTS & PEOPLE]**\n- No human subjects present. Focus purely on the architecture.\n\n"
