@@ -257,7 +257,7 @@ with tab1:
         st.caption(f"💡 *{desc_render[rendering_style]}*")
         st.write("")
         
-        color_grade = st.selectbox("Color Grade", list(desc_color.keys()), index=1)
+        color_grade = st.selectbox("Color Grade", list(desc_color.keys()))
         st.caption(f"💡 *{desc_color[color_grade]}*")
     
     # Generate Button
