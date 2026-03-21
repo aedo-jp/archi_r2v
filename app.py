@@ -13,6 +13,7 @@ if "analysis_text" not in st.session_state:
 if "prompt_history" not in st.session_state:
     st.session_state.prompt_history = "=== ARCHITECTURE PROMPT HISTORY ===\n\n"
 
+# Initialize Session State for Dynamic Material Changes
 if "material_changes" not in st.session_state:
     st.session_state.material_changes = [{"id": 0, "from": "", "to": ""}]
 if "mat_id_counter" not in st.session_state:
@@ -62,8 +63,8 @@ desc_render = {
 }
 
 desc_color = {
-    "Architectural Crisp (Perfectly neutral white balance, cool daylight tones, accurate whites)": "Strips away warm tints, ensuring white walls look purely white. The industry standard for modern architectural portfolios.",
     "Natural Realism": "Unfiltered, raw color output. Looks like a standard high-quality digital photograph.",
+    "Architectural Crisp (Perfectly neutral white balance, cool daylight tones, accurate whites)": "Strips away warm tints, ensuring white walls look purely white. The industry standard for modern architectural portfolios.",
     "Bright & Airy (High key, diffused cool lighting)": "Overexposes the image slightly and lowers contrast for a light, breezy, and optimistic feel (often used in Scandi design).",
     "Cinematic (Rich Saturation, Crisp Sharpness)": "Boosts colors and edge sharpness to look like a frame from a high-budget Hollywood film.",
     "Moody & Dramatic (Deep Shadows, Desaturated)": "Pulls color out of the image and deepens shadows for a brooding, intense, and highly stylized look."
@@ -257,7 +258,7 @@ with tab1:
         st.caption(f"💡 *{desc_render[rendering_style]}*")
         st.write("")
         
-        color_grade = st.selectbox("Color Grade", list(desc_color.keys()))
+        color_grade = st.selectbox("Color Grade", list(desc_color.keys()), index=1)
         st.caption(f"💡 *{desc_color[color_grade]}*")
     
     # Generate Button
@@ -265,6 +266,10 @@ with tab1:
     if st.button("Generate Image Prompt"):
         
         valid_mat_changes = [c for c in st.session_state.material_changes if c["from"].strip() and c["to"].strip()]
+        
+        # Capture the cleaned variables first for injection
+        clean_time = time_of_day.split(" (")[0]
+        clean_weather = weather.split(" (")[0]
         
         # --- BUILDING THE STRUCTURED PROMPT ---
         
@@ -279,8 +284,6 @@ with tab1:
             base_prompt += "- The time of day is night, featuring an intimate, moody evening party atmosphere.\n"
             base_prompt += "- CRITICAL FIXTURE LOCK & LIGHTING RULE: All overhead ceiling downlights, recessed lights, and bright spotlights MUST be completely turned OFF. The space is illuminated exclusively by existing low-level ambient lighting, floor lamps, wall sconces, and indirect cove lighting present in the original design. Do NOT invent new party lights, string lights, or disco balls. Maintain original fixture geometry perfectly, just change which ones are emitting light to create a dim, moody environment.\n"
         else:
-            # Strip the bracketed description for the prompt itself
-            clean_time = time_of_day.split(" (")[0]
             base_prompt += f"- The lighting scenario is {clean_time}.\n"
             if "Night" in time_of_day or "Twilight" in time_of_day:
                  base_prompt += "- CRITICAL FIXTURE LOCK: The exact physical design, shape, and architectural style of the existing lighting fixtures MUST be strictly preserved. Do NOT alter their appearance, morph them into generic lamps, or invent new light sources. Increase the luminosity of the existing architectural lights to beautifully illuminate the space while maintaining their exact original geometry.\n"
@@ -290,14 +293,12 @@ with tab1:
                  else:
                      base_prompt += f"- Utilize natural environmental light matching the {clean_time.lower()}. Do NOT add new artificial light fixtures to the architecture. Maintain original fixture geometry perfectly.\n"
         
-        # Strip the bracketed description for the render engine prompt
         clean_render = rendering_style.split(" (")[0]
         if clean_render != "Standard Photorealistic PBR":
             base_prompt += f"- Rendered utilizing {clean_render.lower()} and full global illumination to ensure natural, realistic light bounce throughout the scene, naturally softening shadows.\n"
         else:
             base_prompt += "- Rendered with full global illumination to ensure natural, realistic light bounce throughout the scene, naturally softening shadows.\n"
         
-        # Strip the bracketed description for shadow quality
         clean_shadow = shadow_quality.split(" (")[0]
         if clean_shadow != "Standard realistic shadows":
             base_prompt += f"- Ensure the lighting features {clean_shadow.lower()}.\n"
@@ -316,23 +317,24 @@ with tab1:
         else:
             base_prompt += "- CRITICAL MATERIAL INSTRUCTION: Retain all original architectural materials perfectly. Elevate them to hyper-realistic, natural textures and physically based rendering (PBR) quality.\n\n"
             
-        # 4. SUBJECTS
+        # 4. SUBJECTS (UPDATED WITH SIMPLIFIED, POSITIVE LOGIC)
         if repopulate_rendered_people:
             base_prompt += "**[SUBJECTS & PEOPLE: REPOPULATE]**\n"
-            base_prompt += "- CRITICAL PEOPLE REPLACEMENT: Identify all existing CGI-looking or low-detail people figures present in the original geometry. Treat them strictly as placeholder masks for complete photo-painting. Do NOT attempt to improve or enhance the old figures. Instead, paint them over ENTIRELY with high-end, photorealistic human subjects.\n"
-            base_prompt += "- The new subjects MUST possess flawless, detailed photorealistic faces and features, clearly defined and in sharp focus, as if from real photography. No CGI characteristics, blurs, blank expressions, or missing facial features (like eyes or mouths) are permitted. All details of their clothing, skin, and pose must be photo-perfect, maintaining their exact positions and locations from the original render.\n"
-            base_prompt += "- The human subjects are lit naturally by the environment, casting accurate soft contact shadows.\n\n"
+            base_prompt += "- CRITICAL PEOPLE REPLACEMENT: Identify all people currently present in the original image. Use their exact silhouettes as masks to paint over them ENTIRELY with high-end, photorealistic human subjects.\n"
+            base_prompt += "- Ensure all human subjects possess flawless, highly detailed photorealistic faces, with all facial features accurately reproduced in sharp focus. All details of their clothing, skin, and pose must be photo-perfect and highly realistic.\n"
+            base_prompt += "- CRITICAL POSITION LOCK: You must maintain the exact positions, scale, and locations of every person exactly as they appear in the original render.\n"
+            base_prompt += f"- The human subjects must be lit perfectly in conjunction with the selected {clean_time.lower()} environment and {clean_weather.lower()} atmosphere. They must look entirely natural and physically grounded within this specific lighting setup, casting accurate contact shadows.\n\n"
+            
         elif num_people > 0:
             base_prompt += "**[SUBJECTS & PEOPLE: ADD]**\n"
-            base_prompt += f"- Integrated seamlessly {placement} are {num_people} people wearing {attire}, {facing_direction}. All subjects must possess flawless photorealistic faces and clear, defined features.\n"
-            base_prompt += "- The human subjects are lit naturally by the environment, casting accurate soft contact shadows.\n\n"
+            base_prompt += f"- Integrated seamlessly {placement} are {num_people} people wearing {attire}, {facing_direction}. Ensure all subjects possess flawless, highly detailed photorealistic faces, with all facial features accurately reproduced in sharp focus.\n"
+            base_prompt += f"- The human subjects must be lit perfectly in conjunction with the selected {clean_time.lower()} environment and {clean_weather.lower()} atmosphere. They must look entirely natural and physically grounded within this specific lighting setup, casting accurate contact shadows.\n\n"
         else:
             base_prompt += "**[SUBJECTS & PEOPLE]**\n- No human subjects present. Focus purely on the architecture.\n\n"
         
         # 5. ATMOSPHERE & RENDERING
         base_prompt += "**[ATMOSPHERE & RENDERING]**\n"
         
-        clean_weather = weather.split(" (")[0]
         if clean_weather != "Clear / Crisp Air":
             if scene_type == "Interior":
                 base_prompt += f"- The view outside the windows and the quality of the light reflect {clean_weather.lower()} conditions.\n"
