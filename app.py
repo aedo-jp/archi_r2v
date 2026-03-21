@@ -10,9 +10,21 @@ st.write("Upload a render, extract its physical geometry, and build perfect gene
 # 2. Initialize Session State
 if "analysis_text" not in st.session_state:
     st.session_state.analysis_text = ""
-    
 if "prompt_history" not in st.session_state:
     st.session_state.prompt_history = "=== ARCHITECTURE PROMPT HISTORY ===\n\n"
+
+# NEW: Initialize Session State for Dynamic Material Changes
+if "material_changes" not in st.session_state:
+    st.session_state.material_changes = [{"id": 0, "from": "", "to": ""}]
+if "mat_id_counter" not in st.session_state:
+    st.session_state.mat_id_counter = 1
+
+def add_material_row():
+    st.session_state.material_changes.append({"id": st.session_state.mat_id_counter, "from": "", "to": ""})
+    st.session_state.mat_id_counter += 1
+
+def remove_material_row(index):
+    st.session_state.material_changes.pop(index)
 
 # 3. Sidebar
 with st.sidebar:
@@ -92,8 +104,46 @@ with tab1:
 
     st.header("Step 1b: Generate 'Baking' Prompt")
     
-    # --- SECTION 1: SUBJECTS (PEOPLE) ---
-    st.subheader("1. Subject Details")
+    # --- SECTION 1: MATERIAL OVERRIDES ---
+    st.subheader("1. Material Overrides")
+    st.write("Specify any materials you want to change from the original render. Leave blank to keep everything original.")
+    
+    # Dynamic list rendering
+    for i, change in enumerate(st.session_state.material_changes):
+        col_m1, col_m2, col_m3 = st.columns([4, 4, 1])
+        with col_m1:
+            change["from"] = st.text_input(
+                "Original Material (Change From)", 
+                value=change["from"], 
+                key=f"from_{change['id']}", 
+                label_visibility="visible" if i == 0 else "collapsed",
+                placeholder="e.g., concrete floor"
+            )
+        with col_m2:
+            change["to"] = st.text_input(
+                "New Material (Change To)", 
+                value=change["to"], 
+                key=f"to_{change['id']}", 
+                label_visibility="visible" if i == 0 else "collapsed",
+                placeholder="e.g., warm oak timber"
+            )
+        with col_m3:
+            # Add a bit of spacing for alignment on the first row
+            if i == 0:
+                st.write("")
+                st.write("")
+            if st.button("❌", key=f"del_{change['id']}", help="Delete this row"):
+                remove_material_row(i)
+                st.rerun()
+                
+    if st.button("➕ Add Material Change"):
+        add_material_row()
+        st.rerun()
+
+    st.divider()
+
+    # --- SECTION 2: SUBJECTS (PEOPLE) ---
+    st.subheader("2. Subject Details")
     
     if "repopulate_people" not in st.session_state:
         st.session_state.repopulate_people = False
@@ -143,8 +193,8 @@ with tab1:
 
     st.divider()
     
-    # --- SECTION 2: ENVIRONMENT & STYLE ---
-    st.subheader("2. Environment, Lighting & Rendering")
+    # --- SECTION 3: ENVIRONMENT & STYLE ---
+    st.subheader("3. Environment, Lighting & Rendering")
     col3, col4 = st.columns(2)
     
     with col3:
@@ -195,6 +245,9 @@ with tab1:
     st.write("")
     if st.button("Generate Image Prompt"):
         
+        # Filter out empty material changes
+        valid_mat_changes = [c for c in st.session_state.material_changes if c["from"].strip() and c["to"].strip()]
+        
         # --- BUILDING THE STRUCTURED PROMPT ---
         
         # 1. BASE AND PERSPECTIVE
@@ -221,10 +274,19 @@ with tab1:
             base_prompt += f"- Ensure the lighting features {shadow_quality.lower()}.\n"
         base_prompt += "\n"
             
-        # 3. GEOMETRY
-        base_prompt += "**[PHYSICAL GEOMETRY]**\n"
+        # 3. GEOMETRY & MATERIALS
+        base_prompt += "**[PHYSICAL GEOMETRY & MATERIALS]**\n"
         if st.session_state.analysis_text:
-            base_prompt += f"- The precise physical {scene_type.lower()} scene consists of: {st.session_state.analysis_text}\n\n"
+            base_prompt += f"- The precise physical {scene_type.lower()} scene consists of: {st.session_state.analysis_text}\n"
+            
+        # NEW: Injecting the Conflict-Free Material Changes
+        if valid_mat_changes:
+            base_prompt += "- CRITICAL MATERIAL INSTRUCTION: Retain all original architectural materials perfectly and elevate them to photorealistic PBR quality, EXCEPT for the following explicit replacements:\n"
+            for change in valid_mat_changes:
+                base_prompt += f"  * REPLACE '{change['from']}' WITH '{change['to']}'\n"
+            base_prompt += "\n"
+        else:
+            base_prompt += "- CRITICAL MATERIAL INSTRUCTION: Retain all original architectural materials perfectly. Elevate them to hyper-realistic, natural textures and physically based rendering (PBR) quality.\n\n"
             
         # 4. SUBJECTS
         base_prompt += "**[SUBJECTS & PEOPLE]**\n"
@@ -252,7 +314,6 @@ with tab1:
             base_prompt += f"- The final image should be color graded as: {color_grade}.\n"
             
         st.success("Copy this prompt into your Image Generator:")
-        # Streamlit st.code handles multi-line strings beautifully
         st.code(base_prompt)
         
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -293,7 +354,6 @@ with tab2:
         ])
     
     if st.button("Generate Video Prompt"):
-        # Structured Video Prompt
         vid_prompt = f"**[CAMERA MOVEMENT]**\n- {camera_motion} moving through the space at {video_speed.lower()}.\n"
         vid_prompt += "- Camera is mounted on a perfectly smooth mechanical slider and stabilized gimbal. Zero camera shake, no handheld movement, no walking bounce, perfectly fluid cinematic motion.\n\n"
         
