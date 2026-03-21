@@ -191,7 +191,7 @@ with tab1:
     if "repopulate_people" not in st.session_state:
         st.session_state.repopulate_people = False
 
-    repopulate_rendered_people = st.checkbox("Repopulate existing rendered figures with photorealistic subjects.", help="Check this box if fake-looking CGI people are already in the scene and you want to replace them in their exact positions. This disables the other inputs below.")
+    repopulate_rendered_people = st.checkbox("Repopulate existing rendered figures with photorealistic subjects.", help="Check this box to replace all existing people in the scene with photorealistic versions in their same locations. This disables the other inputs below.")
     
     if repopulate_rendered_people != st.session_state.repopulate_people:
         st.session_state.repopulate_people = repopulate_rendered_people
