@@ -13,7 +13,6 @@ if "analysis_text" not in st.session_state:
 if "prompt_history" not in st.session_state:
     st.session_state.prompt_history = "=== ARCHITECTURE PROMPT HISTORY ===\n\n"
 
-# Initialize Session State for Dynamic Material Changes
 if "material_changes" not in st.session_state:
     st.session_state.material_changes = [{"id": 0, "from": "", "to": ""}]
 if "mat_id_counter" not in st.session_state:
@@ -25,6 +24,51 @@ def add_material_row():
 
 def remove_material_row(index):
     st.session_state.material_changes.pop(index)
+
+# --- DICTIONARIES FOR DYNAMIC UI DESCRIPTIONS ---
+desc_time = {
+    "Morning (Warm angled sunlight)": "Creates long, dramatic shadows and a soft, golden-warm hue. Ideal for making spaces feel inviting and energetic.",
+    "Midday (Bright, neutral/cool white daylight)": "Mimics the sun at its peak. Creates sharp, short shadows and crisp, true-to-life white tones. Best for accurate color representation.",
+    "Golden Hour/Sunset": "Produces rich, deep orange and red tones with highly stretched, dramatic shadows. Very cinematic and emotional.",
+    "Twilight / Blue Hour": "The brief window after sunset. Bathes the exterior in soft, cool blue light while making interior warm lights 'pop' and glow.",
+    "Night": "Complete darkness outside, forcing the scene to rely entirely on artificial interior lighting, streetlamps, or moonlight.",
+    "Evening Party (Moody, Downlights OFF)": "Turns off harsh overhead lights, relying on warm, low-level ambient fixtures (lamps, sconces) for an intimate, moody vibe."
+}
+
+desc_weather = {
+    "Clear / Crisp Air": "Sharp, high-contrast visibility with no atmospheric interference. Best for clean architectural showcases.",
+    "Slight Nighttime Mist (Softens lights)": "Adds a very subtle, cinematic glow (halation) around light sources. Excellent for moody night renders.",
+    "Atmospheric Haze / Dust Motes": "Catches the light in the air, creating a lived-in, photorealistic depth. Makes morning sunlight look tangible.",
+    "Volumetric Lighting / God Rays": "Forces light to behave like physical beams cutting through the room/air. Very dramatic and stylized.",
+    "Light Rain and Wet Reflective Surfaces": "Makes floors, roads, and hard surfaces glossy and reflective, adding texture and bouncing light beautifully.",
+    "Heavy Torrential Rain": "Adds visible rain streaks, deepens material colors, and heavily diffuses background visibility.",
+    "Light Snow Flurries": "Adds a cold, soft ambiance with gentle falling snow. Best paired with warm interior lighting for contrast.",
+    "Heavy Snowstorm": "Creates a white-out effect, significantly softening the light and muting background details.",
+    "Overcast / Diffused Sky": "Acts like a giant softbox. Eliminates harsh shadows entirely, providing incredibly even, flat, and balanced lighting."
+}
+
+desc_shadow = {
+    "Standard realistic shadows": "Default physics. Shadow hardness depends entirely on the size of the light source.",
+    "Soft, feathered shadows with low contrast": "Mimics large, diffused light sources (like overcast days or studio softboxes). Very flattering for interiors.",
+    "Ambient nighttime lighting with balanced exposure (no pitch-black areas)": "Prevents 'crushed' black shadows, ensuring details are still visible in the darkest corners of a night scene.",
+    "Harsh, high-contrast crisp shadows": "Mimics direct, unobstructed sunlight or intense spotlights. Creates bold, graphic architectural lines."
+}
+
+desc_render = {
+    "Standard Photorealistic PBR": "The baseline standard for modern physically-based rendering. Accurate materials and realistic light.",
+    "Global Illumination & Ambient Occlusion": "Forces the AI to focus on how light bounces off walls and softly darkens in corners. Results in highly realistic, grounded scenes.",
+    "High Dynamic Range (HDR) photography": "Balances the exposure so you can clearly see details in both the brightest windows and the darkest shadows simultaneously.",
+    "Long exposure photography style": "Smooths out water, blurs moving elements (like clouds), and creates a highly polished, serene architectural look."
+}
+
+desc_color = {
+    "Natural Realism": "Unfiltered, raw color output. Looks like a standard high-quality digital photograph.",
+    "Architectural Crisp (Perfectly neutral white balance, cool daylight tones, accurate whites)": "Strips away warm tints, ensuring white walls look purely white. The industry standard for modern architectural portfolios.",
+    "Bright & Airy (High key, diffused cool lighting)": "Overexposes the image slightly and lowers contrast for a light, breezy, and optimistic feel (often used in Scandi design).",
+    "Cinematic (Rich Saturation, Crisp Sharpness)": "Boosts colors and edge sharpness to look like a frame from a high-budget Hollywood film.",
+    "Moody & Dramatic (Deep Shadows, Desaturated)": "Pulls color out of the image and deepens shadows for a brooding, intense, and highly stylized look."
+}
+# ------------------------------------------------
 
 # 3. Sidebar
 with st.sidebar:
@@ -191,55 +235,30 @@ with tab1:
 
     st.divider()
     
-    # --- SECTION 3: ENVIRONMENT & STYLE ---
+    # --- SECTION 3: ENVIRONMENT & STYLE (WITH DYNAMIC DESCRIPTIONS) ---
     st.subheader("3. Environment, Lighting & Rendering")
     col3, col4 = st.columns(2)
     
     with col3:
-        time_of_day = st.selectbox("Time of Day / Lighting Scenario", [
-            "Morning (Warm angled sunlight)", 
-            "Midday (Bright, neutral/cool white daylight)", 
-            "Golden Hour/Sunset", 
-            "Twilight / Blue Hour", 
-            "Night",
-            "Evening Party (Moody, Downlights OFF)"
-        ])
+        time_of_day = st.selectbox("Time of Day / Lighting Scenario", list(desc_time.keys()))
+        st.caption(f"💡 *{desc_time[time_of_day]}*")
+        st.write("") # Little extra spacing
         
-        weather = st.selectbox("Atmosphere & Weather", [
-            "Clear / Crisp Air",
-            "Slight Nighttime Mist (Softens lights)",
-            "Atmospheric Haze / Dust Motes",
-            "Volumetric Lighting / God Rays",
-            "Light Rain and Wet Reflective Surfaces",
-            "Heavy Torrential Rain",
-            "Light Snow Flurries",
-            "Heavy Snowstorm",
-            "Overcast / Diffused Sky"
-        ])
+        weather = st.selectbox("Atmosphere & Weather", list(desc_weather.keys()))
+        st.caption(f"💡 *{desc_weather[weather]}*")
+        st.write("")
         
     with col4:
-        shadow_quality = st.selectbox("Shadow Quality", [
-            "Standard realistic shadows",
-            "Soft, feathered shadows with low contrast",
-            "Ambient nighttime lighting with balanced exposure (no pitch-black areas)",
-            "Harsh, high-contrast crisp shadows"
-        ])
+        shadow_quality = st.selectbox("Shadow Quality", list(desc_shadow.keys()))
+        st.caption(f"💡 *{desc_shadow[shadow_quality]}*")
+        st.write("")
         
-        rendering_style = st.selectbox("Rendering Engine & Camera Tech", [
-            "Standard Photorealistic PBR",
-            "Global Illumination & Ambient Occlusion",
-            "High Dynamic Range (HDR) photography",
-            "Long exposure photography style"
-        ])
+        rendering_style = st.selectbox("Rendering Engine & Camera Tech", list(desc_render.keys()))
+        st.caption(f"💡 *{desc_render[rendering_style]}*")
+        st.write("")
         
-        # UPDATED: Set "Architectural Crisp" as the default using index=1
-        color_grade = st.selectbox("Color Grade", [
-            "Natural Realism",
-            "Architectural Crisp (Perfectly neutral white balance, cool daylight tones, accurate whites)",
-            "Bright & Airy (High key, diffused cool lighting)",
-            "Cinematic (Rich Saturation, Crisp Sharpness)",
-            "Moody & Dramatic (Deep Shadows, Desaturated)"
-        ], index=1)
+        color_grade = st.selectbox("Color Grade", list(desc_color.keys()), index=1)
+        st.caption(f"💡 *{desc_color[color_grade]}*")
     
     # Generate Button
     st.write("")
@@ -260,22 +279,28 @@ with tab1:
             base_prompt += "- The time of day is night, featuring an intimate, moody evening party atmosphere.\n"
             base_prompt += "- CRITICAL FIXTURE LOCK & LIGHTING RULE: All overhead ceiling downlights, recessed lights, and bright spotlights MUST be completely turned OFF. The space is illuminated exclusively by existing low-level ambient lighting, floor lamps, wall sconces, and indirect cove lighting present in the original design. Do NOT invent new party lights, string lights, or disco balls. Maintain original fixture geometry perfectly, just change which ones are emitting light to create a dim, moody environment.\n"
         else:
-            base_prompt += f"- The lighting scenario is {time_of_day}.\n"
-            if time_of_day in ["Twilight / Blue Hour", "Night"]:
+            # Strip the bracketed description for the prompt itself
+            clean_time = time_of_day.split(" (")[0]
+            base_prompt += f"- The lighting scenario is {clean_time}.\n"
+            if "Night" in time_of_day or "Twilight" in time_of_day:
                  base_prompt += "- CRITICAL FIXTURE LOCK: The exact physical design, shape, and architectural style of the existing lighting fixtures MUST be strictly preserved. Do NOT alter their appearance, morph them into generic lamps, or invent new light sources. Increase the luminosity of the existing architectural lights to beautifully illuminate the space while maintaining their exact original geometry.\n"
             else:
                  if scene_type == "Interior":
-                     base_prompt += f"- The interior is illuminated beautifully by natural {time_of_day.lower()} streaming in through the windows, alongside balanced existing interior fixtures. The exact physical design and shape of all light fixtures MUST be strictly preserved.\n"
+                     base_prompt += f"- The interior is illuminated beautifully by natural {clean_time.lower()} streaming in through the windows, alongside balanced existing interior fixtures. The exact physical design and shape of all light fixtures MUST be strictly preserved.\n"
                  else:
-                     base_prompt += f"- Utilize natural environmental light matching the {time_of_day.lower()}. Do NOT add new artificial light fixtures to the architecture. Maintain original fixture geometry perfectly.\n"
+                     base_prompt += f"- Utilize natural environmental light matching the {clean_time.lower()}. Do NOT add new artificial light fixtures to the architecture. Maintain original fixture geometry perfectly.\n"
         
-        if rendering_style != "Standard Photorealistic PBR":
-            base_prompt += f"- Rendered utilizing {rendering_style.lower()} and full global illumination to ensure natural, realistic light bounce throughout the scene, naturally softening shadows.\n"
+        # Strip the bracketed description for the render engine prompt
+        clean_render = rendering_style.split(" (")[0]
+        if clean_render != "Standard Photorealistic PBR":
+            base_prompt += f"- Rendered utilizing {clean_render.lower()} and full global illumination to ensure natural, realistic light bounce throughout the scene, naturally softening shadows.\n"
         else:
             base_prompt += "- Rendered with full global illumination to ensure natural, realistic light bounce throughout the scene, naturally softening shadows.\n"
         
-        if shadow_quality != "Standard realistic shadows":
-            base_prompt += f"- Ensure the lighting features {shadow_quality.lower()}.\n"
+        # Strip the bracketed description for shadow quality
+        clean_shadow = shadow_quality.split(" (")[0]
+        if clean_shadow != "Standard realistic shadows":
+            base_prompt += f"- Ensure the lighting features {clean_shadow.lower()}.\n"
         base_prompt += "\n"
             
         # 3. GEOMETRY & MATERIALS
@@ -306,14 +331,17 @@ with tab1:
         
         # 5. ATMOSPHERE & RENDERING
         base_prompt += "**[ATMOSPHERE & RENDERING]**\n"
-        if weather != "Clear / Crisp Air":
-            if scene_type == "Interior":
-                base_prompt += f"- The view outside the windows and the quality of the light reflect {weather.lower()} conditions.\n"
-            else:
-                base_prompt += f"- The atmospheric conditions feature {weather.lower()}. CRITICAL: Atmospheric effects like mist, haze, or fog must strictly remain volumetric light scatter and MUST NOT alter, morph, or redesign the physical geometry of the building or its lighting fixtures.\n"
         
-        if color_grade != "Natural Realism":
-            base_prompt += f"- The final image should be color graded as: {color_grade}.\n"
+        clean_weather = weather.split(" (")[0]
+        if clean_weather != "Clear / Crisp Air":
+            if scene_type == "Interior":
+                base_prompt += f"- The view outside the windows and the quality of the light reflect {clean_weather.lower()} conditions.\n"
+            else:
+                base_prompt += f"- The atmospheric conditions feature {clean_weather.lower()}. CRITICAL: Atmospheric effects like mist, haze, or fog must strictly remain volumetric light scatter and MUST NOT alter, morph, or redesign the physical geometry of the building or its lighting fixtures.\n"
+        
+        clean_color = color_grade.split(" (")[0]
+        if clean_color != "Natural Realism":
+            base_prompt += f"- The final image should be color graded as: {clean_color}.\n"
             
         st.success("Copy this prompt into your Image Generator:")
         st.code(base_prompt)
