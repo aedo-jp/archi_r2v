@@ -196,7 +196,6 @@ with tab1:
     col3, col4 = st.columns(2)
     
     with col3:
-        # UPDATED: More specific daylight options to avoid unwanted warmth
         time_of_day = st.selectbox("Time of Day / Lighting Scenario", [
             "Morning (Warm angled sunlight)", 
             "Midday (Bright, neutral/cool white daylight)", 
@@ -233,14 +232,14 @@ with tab1:
             "Long exposure photography style"
         ])
         
-        # UPDATED: Added "Architectural Crisp" and modified "Bright & Airy"
+        # UPDATED: Set "Architectural Crisp" as the default using index=1
         color_grade = st.selectbox("Color Grade", [
             "Natural Realism",
             "Architectural Crisp (Perfectly neutral white balance, cool daylight tones, accurate whites)",
             "Bright & Airy (High key, diffused cool lighting)",
             "Cinematic (Rich Saturation, Crisp Sharpness)",
             "Moody & Dramatic (Deep Shadows, Desaturated)"
-        ])
+        ], index=1)
     
     # Generate Button
     st.write("")
