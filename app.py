@@ -13,7 +13,7 @@ if "analysis_text" not in st.session_state:
 if "prompt_history" not in st.session_state:
     st.session_state.prompt_history = "=== ARCHITECTURE PROMPT HISTORY ===\n\n"
 
-# NEW: Initialize Session State for Dynamic Material Changes
+# Initialize Session State for Dynamic Material Changes
 if "material_changes" not in st.session_state:
     st.session_state.material_changes = [{"id": 0, "from": "", "to": ""}]
 if "mat_id_counter" not in st.session_state:
@@ -108,7 +108,6 @@ with tab1:
     st.subheader("1. Material Overrides")
     st.write("Specify any materials you want to change from the original render. Leave blank to keep everything original.")
     
-    # Dynamic list rendering
     for i, change in enumerate(st.session_state.material_changes):
         col_m1, col_m2, col_m3 = st.columns([4, 4, 1])
         with col_m1:
@@ -128,7 +127,6 @@ with tab1:
                 placeholder="e.g., warm oak timber"
             )
         with col_m3:
-            # Add a bit of spacing for alignment on the first row
             if i == 0:
                 st.write("")
                 st.write("")
@@ -247,14 +245,14 @@ with tab1:
         
         valid_mat_changes = [c for c in st.session_state.material_changes if c["from"].strip() and c["to"].strip()]
         
-        # --- BUILDING THE STRUCTURED PROMPT WITH REINFORCED CONSTRAINTS ---
+        # --- BUILDING THE STRUCTURED PROMPT ---
         
         # 1. BASE AND PERSPECTIVE
         base_prompt = f"**[BASE]**\n- A high-resolution, hyper-realistic {scene_type.lower()} architectural photograph.\n\n"
         
         base_prompt += "**[CAMERA & PERSPECTIVE]**\n- CRITICAL PERSPECTIVE LOCK: You MUST maintain the exact camera position, horizon line, focal length, and target viewpoint from the uploaded image. Do NOT shift the camera or change the composition.\n\n"
         
-        # 2. LIGHTING & FIXTURES (Reinforced Global Illumination)
+        # 2. LIGHTING & FIXTURES
         base_prompt += "**[LIGHTING & FIXTURES]**\n"
         if time_of_day == "Evening Party (Moody, Downlights OFF)":
             base_prompt += "- The time of day is night, featuring an intimate, moody evening party atmosphere.\n"
@@ -269,7 +267,6 @@ with tab1:
                  else:
                      base_prompt += f"- Utilize natural environmental light matching the {time_of_day}. Do NOT add new artificial light fixtures to the architecture. Maintain original fixture geometry perfectly.\n"
         
-        # Strengthened Global Illumination rule for light bounce on people
         if rendering_style != "Standard Photorealistic PBR":
             base_prompt += f"- Rendered utilizing {rendering_style.lower()} and full global illumination to ensure natural, realistic light bounce throughout the scene, naturally softening shadows.\n"
         else:
@@ -292,14 +289,12 @@ with tab1:
         else:
             base_prompt += "- CRITICAL MATERIAL INSTRUCTION: Retain all original architectural materials perfectly. Elevate them to hyper-realistic, natural textures and physically based rendering (PBR) quality.\n\n"
             
-        # 4. SUBJECTS (Heavily Reinforced for Photo-Perfect Features)
+        # 4. SUBJECTS (Aggressive Photo-Replacement)
         if repopulate_rendered_people:
-            # New, Aggressive People Replacement Logic
             base_prompt += "**[SUBJECTS & PEOPLE: REPOPULATE]**\n"
             base_prompt += "- CRITICAL PEOPLE REPLACEMENT: Identify all existing CGI-looking or low-detail people figures present in the original geometry. Treat them strictly as placeholder masks for complete photo-painting. Do NOT attempt to improve or enhance the old figures. Instead, paint them over ENTIRELY with high-end, photorealistic human subjects.\n"
-            base_prompt += "- The new subjects MUST possess flawless, detailed photorealistic faces and features, clearly defined and in sharp focus, as if from real photography. No CGI characteristics, blurs, blank expressions, or missing facial features (like eyes or mouths) are permitted. All details of their clothing, skin, and pose must be photo-perfect, maintaining their exact positions and locations from the original render.\n\n"
+            base_prompt += "- The new subjects MUST possess flawless, detailed photorealistic faces and features, clearly defined and in sharp focus, as if from real photography. No CGI characteristics, blurs, blank expressions, or missing facial features (like eyes or mouths) are permitted. All details of their clothing, skin, and pose must be photo-perfect, maintaining their exact positions and locations from the original render.\n"
             base_prompt += "- The human subjects are lit naturally by the environment, casting accurate soft contact shadows.\n\n"
-            
         elif num_people > 0:
             base_prompt += "**[SUBJECTS & PEOPLE: ADD]**\n"
             base_prompt += f"- Integrated seamlessly {placement} are {num_people} people wearing {attire}, {facing_direction}. All subjects must possess flawless photorealistic faces and clear, defined features.\n"
@@ -315,10 +310,6 @@ with tab1:
             else:
                 base_prompt += f"- The atmospheric conditions feature {weather.lower()}. CRITICAL: Atmospheric effects like mist, haze, or fog must strictly remain volumetric light scatter and MUST NOT alter, morph, or redesign the physical geometry of the building or its lighting fixtures.\n"
         
-        ifrendering_style != "Standard Photorealistic PBR":
-            # Redundant check, but keeping the logic consistent for future-proofing
-            pass
-            
         if color_grade != "Natural Realism":
             base_prompt += f"- The final image should be color graded as: {color_grade}.\n"
             
@@ -327,3 +318,53 @@ with tab1:
         
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         st.session_state.prompt_history += f"[{timestamp}] IMAGE PROMPT:\n{base_prompt}\n\n"
+
+# --- TAB 2: VIDEO GENERATION ---
+with tab2:
+    st.header("Step 2: Animate the Baked Image")
+    
+    col5, col6 = st.columns(2)
+    with col5:
+        camera_motion = st.selectbox("Camera Movement", [
+            "Static / No Movement",
+            "Slow Dolly-In (Push In)", "Fast Dolly-In",
+            "Slow Dolly-Out (Pull Out)", "Fast Dolly-Out",
+            "Slow Pan Left", "Fast Pan Left",
+            "Slow Pan Right", "Fast Pan Right",
+            "Slow Tilt Up", "Slow Tilt Down",
+            "Slow Tracking Shot Left", "Slow Tracking Shot Right",
+            "Aerial Overhead Drone Shot (Bird's Eye)",
+            "Horizontal Drone Fly-By",
+            "Crane Shot Sweep"
+        ])
+        walk_speed = st.selectbox("Walking Speed", ["Casual stroll", "Brisk walk", "Standing still"])
+        
+    with col6:
+        video_speed = st.selectbox("Video Speed / Framerate Style", [
+            "Normal Cinematic Speed (Real-time 24fps)",
+            "Slow Motion (120fps style)",
+            "Fast Motion / Time-lapse"
+        ])
+        
+        depth_of_field = st.selectbox("Depth of Field (Focus)", [
+            "Deep Focus (f/8+ style, entire scene is sharp)",
+            "Shallow Focus (Subject is sharp, background beautifully blurred/bokeh)",
+            "Shallow Focus (Background is sharp, foreground subjects blurred)",
+            "Rack Focus (Focus smoothly shifts from foreground to background)"
+        ])
+    
+    if st.button("Generate Video Prompt"):
+        vid_prompt = f"**[CAMERA MOVEMENT]**\n- {camera_motion} moving through the space at {video_speed.lower()}.\n"
+        vid_prompt += "- Camera is mounted on a perfectly smooth mechanical slider and stabilized gimbal. Zero camera shake, no handheld movement, no walking bounce, perfectly fluid cinematic motion.\n\n"
+        
+        vid_prompt += f"**[SUBJECT MOTION]**\n- The subjects maintain a {walk_speed}.\n\n"
+        
+        vid_prompt += f"**[LENS & FOCUS]**\n- The lens uses {depth_of_field.lower()}.\n\n"
+        
+        vid_prompt += "**[PERSISTENCE & PHYSICS]**\n- Maintain exact architectural geometry, original lighting, and floor reflections from the starting frame. Natural, physics-based ambient movement."
+        
+        st.success("Copy this prompt into Google Flow Video:")
+        st.code(vid_prompt)
+        
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        st.session_state.prompt_history += f"[{timestamp}] VIDEO PROMPT:\n{vid_prompt}\n\n"
