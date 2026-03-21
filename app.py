@@ -122,17 +122,17 @@ with tab1:
                         
                         if scene_type == "Exterior":
                             vision_prompt = """Analyze this architectural render. Describe:
-                            1. The precise camera perspective, horizon line, and framing.
-                            2. The core architectural form and geometry.
+                            1. The exact camera perspective, horizon line, and framing.
+                            2. The core architectural form and structural geometry.
                             3. Key building and landscaping materials (comma-separated list).
-                            4. CRITICAL: Identify and describe any physical architectural lighting fixtures (e.g., sconces, uplights) as structural geometry that must not change shape.
+                            4. Identify physical architectural lighting fixtures (e.g., sconces, uplights).
                             Keep it extremely concise (under 50 words). Do NOT describe current lighting, shadows, sky, or weather. Provide a 'blank slate' physical description."""
                         else:
                             vision_prompt = """Analyze this interior architectural render. Describe:
-                            1. The precise spatial layout and camera viewpoint (e.g., wide-angle interior view).
+                            1. The exact spatial layout and camera viewpoint (e.g., wide-angle interior view).
                             2. Key floor/wall materials (comma-separated list).
                             3. Major structural furniture or built-ins.
-                            4. CRITICAL: Identify and describe all physical interior lighting fixtures (e.g., specific lamps, chandeliers, pendant lights) as structural geometry that must remain identical.
+                            4. Identify all physical interior lighting fixtures (e.g., specific lamps, chandeliers, pendant lights).
                             Keep it extremely concise (under 50 words). Do NOT describe current lighting, shadows, time of day, or weather. Provide a 'blank slate' of the physical room."""
                             
                         response = model.generate_content([vision_prompt, image])
@@ -236,14 +236,14 @@ with tab1:
 
     st.divider()
     
-    # --- SECTION 3: ENVIRONMENT & STYLE (WITH DYNAMIC DESCRIPTIONS) ---
+    # --- SECTION 3: ENVIRONMENT & STYLE ---
     st.subheader("3. Environment, Lighting & Rendering")
     col3, col4 = st.columns(2)
     
     with col3:
         time_of_day = st.selectbox("Time of Day / Lighting Scenario", list(desc_time.keys()))
         st.caption(f"💡 *{desc_time[time_of_day]}*")
-        st.write("") # Little extra spacing
+        st.write("") 
         
         weather = st.selectbox("Atmosphere & Weather", list(desc_weather.keys()))
         st.caption(f"💡 *{desc_weather[weather]}*")
@@ -267,37 +267,36 @@ with tab1:
         
         valid_mat_changes = [c for c in st.session_state.material_changes if c["from"].strip() and c["to"].strip()]
         
-        # Capture the cleaned variables first for injection
         clean_time = time_of_day.split(" (")[0]
         clean_weather = weather.split(" (")[0]
         
-        # --- BUILDING THE STRUCTURED PROMPT ---
+        # --- BUILDING THE STRUCTURED PROMPT FOR NANO BANANA PRO / MIDJOURNEY STYLE ---
         
-        # 1. BASE AND PERSPECTIVE
-        base_prompt = f"**[BASE]**\n- A high-resolution, hyper-realistic {scene_type.lower()} architectural photograph.\n\n"
+        # 1. BASE AND PERSPECTIVE (Softer, photography-based locking)
+        base_prompt = f"**[BASE]**\n- A high-resolution, photorealistic {scene_type.lower()} architectural photograph.\n\n"
         
-        base_prompt += "**[CAMERA & PERSPECTIVE]**\n- CRITICAL PERSPECTIVE LOCK: You MUST maintain the exact camera position, horizon line, focal length, and target viewpoint from the uploaded image. Do NOT shift the camera or change the composition.\n\n"
+        base_prompt += "**[CAMERA & PERSPECTIVE]**\n- Maintain the exact composition, framing, camera angle, and structural geometry of the reference image perfectly.\n\n"
         
         # 2. LIGHTING & FIXTURES
         base_prompt += "**[LIGHTING & FIXTURES]**\n"
         if time_of_day == "Evening Party (Moody, Downlights OFF)":
-            base_prompt += "- The time of day is night, featuring an intimate, moody evening party atmosphere.\n"
-            base_prompt += "- CRITICAL FIXTURE LOCK & LIGHTING RULE: All overhead ceiling downlights, recessed lights, and bright spotlights MUST be completely turned OFF. The space is illuminated exclusively by existing low-level ambient lighting, floor lamps, wall sconces, and indirect cove lighting present in the original design. Do NOT invent new party lights, string lights, or disco balls. Maintain original fixture geometry perfectly, just change which ones are emitting light to create a dim, moody environment.\n"
+            base_prompt += "- The lighting is an intimate, moody evening party atmosphere at night.\n"
+            base_prompt += "- All overhead ceiling downlights and bright spotlights are completely turned OFF. The space is illuminated beautifully by the existing low-level ambient lighting, floor lamps, and indirect cove lighting present in the design. Do not add string lights or party decor; just use the existing architecture to create a dim, moody environment.\n"
         else:
             base_prompt += f"- The lighting scenario is {clean_time}.\n"
             if "Night" in time_of_day or "Twilight" in time_of_day:
-                 base_prompt += "- CRITICAL FIXTURE LOCK: The exact physical design, shape, and architectural style of the existing lighting fixtures MUST be strictly preserved. Do NOT alter their appearance, morph them into generic lamps, or invent new light sources. Increase the luminosity of the existing architectural lights to beautifully illuminate the space while maintaining their exact original geometry.\n"
+                 base_prompt += "- Maintain the exact physical design of the existing lighting fixtures. Do not alter their shape or invent new lamps. Beautifully increase the luminosity and glow of the existing architectural lights to illuminate the space.\n"
             else:
                  if scene_type == "Interior":
-                     base_prompt += f"- The interior is illuminated beautifully by natural {clean_time.lower()} streaming in through the windows, alongside balanced existing interior fixtures. The exact physical design and shape of all light fixtures MUST be strictly preserved.\n"
+                     base_prompt += f"- The interior is illuminated beautifully by natural {clean_time.lower()} streaming in through the windows, alongside balanced existing interior fixtures.\n"
                  else:
-                     base_prompt += f"- Utilize natural environmental light matching the {clean_time.lower()}. Do NOT add new artificial light fixtures to the architecture. Maintain original fixture geometry perfectly.\n"
+                     base_prompt += f"- Utilize natural environmental light matching the {clean_time.lower()}. Maintain the existing fixture geometry perfectly without adding new artificial lights.\n"
         
         clean_render = rendering_style.split(" (")[0]
         if clean_render != "Standard Photorealistic PBR":
-            base_prompt += f"- Rendered utilizing {clean_render.lower()} and full global illumination to ensure natural, realistic light bounce throughout the scene, naturally softening shadows.\n"
+            base_prompt += f"- Rendered utilizing {clean_render.lower()} and full global illumination to ensure natural, realistic light bounce and softness throughout the scene.\n"
         else:
-            base_prompt += "- Rendered with full global illumination to ensure natural, realistic light bounce throughout the scene, naturally softening shadows.\n"
+            base_prompt += "- Rendered with full global illumination to ensure natural, realistic light bounce and softness throughout the scene.\n"
         
         clean_shadow = shadow_quality.split(" (")[0]
         if clean_shadow != "Standard realistic shadows":
@@ -310,25 +309,26 @@ with tab1:
             base_prompt += f"- The precise physical {scene_type.lower()} scene consists of: {st.session_state.analysis_text}\n"
             
         if valid_mat_changes:
-            base_prompt += "- CRITICAL MATERIAL INSTRUCTION: Retain all original architectural materials perfectly and elevate them to photorealistic PBR quality, EXCEPT for the following explicit replacements:\n"
+            base_prompt += "- Retain all original architectural materials perfectly and elevate them to photorealistic PBR quality, EXCEPT for the following explicit replacements:\n"
             for change in valid_mat_changes:
                 base_prompt += f"  * REPLACE '{change['from']}' WITH '{change['to']}'\n"
             base_prompt += "\n"
         else:
-            base_prompt += "- CRITICAL MATERIAL INSTRUCTION: Retain all original architectural materials perfectly. Elevate them to hyper-realistic, natural textures and physically based rendering (PBR) quality.\n\n"
+            base_prompt += "- Retain all original architectural materials perfectly. Elevate them to hyper-realistic, natural textures and physically based rendering (PBR) quality.\n\n"
             
-        # 4. SUBJECTS (UPDATED FOR SAFETY POLICY COMPLIANCE)
+        # 4. SUBJECTS (HYPERBOOSTED PHOTOGRAPHY LANGUAGE)
         if repopulate_rendered_people:
             base_prompt += "**[SUBJECTS & PEOPLE: REPOPULATE]**\n"
-            base_prompt += "- CRITICAL PEOPLE REPLACEMENT: Identify all people currently present in the original image. Use their exact silhouettes as masks to paint over them ENTIRELY with highly realistic but generic, everyday human subjects.\n"
-            base_prompt += "- Ensure all human subjects look like diverse, anonymous, everyday people. Their faces and features must be natural and photo-realistic, but completely unrecognizable and non-specific. Do NOT generate anyone who looks like a prominent or recognizable person. All details of their clothing, skin, and pose must be realistic.\n"
-            base_prompt += "- CRITICAL POSITION LOCK: You must maintain the exact positions, scale, and locations of every person exactly as they appear in the original render.\n"
-            base_prompt += f"- The human subjects must be lit perfectly in conjunction with the selected {clean_time.lower()} environment and {clean_weather.lower()} atmosphere. They must look entirely natural and physically grounded within this specific lighting setup, casting accurate contact shadows.\n\n"
+            base_prompt += "- Identify all people currently present in the original image. Paint over them entirely with high-end, photorealistic human subjects.\n"
+            base_prompt += "- HYPER-DETAILED FACES: Facial features must be rendered in extreme 8k resolution with razor-sharp photographic focus, especially for figures closer to the camera. Skin texture, eyes, and micro-details must look like a raw, high-end studio portrait spliced perfectly into the scene. No smooth, blurry, or low-res CGI faces.\n"
+            base_prompt += "- Maintain the exact positions, scale, and locations of every person exactly as they appear in the original render.\n"
+            base_prompt += f"- The human subjects must be lit perfectly in conjunction with the selected {clean_time.lower()} environment and {clean_weather.lower()} atmosphere, casting accurate contact shadows.\n\n"
             
         elif num_people > 0:
             base_prompt += "**[SUBJECTS & PEOPLE: ADD]**\n"
-            base_prompt += f"- Integrated seamlessly {placement} are {num_people} generic, everyday people wearing {attire}, {facing_direction}. Ensure all subjects look like diverse, anonymous individuals with natural, realistic faces. Do NOT generate anyone recognizable or prominent.\n"
-            base_prompt += f"- The human subjects must be lit perfectly in conjunction with the selected {clean_time.lower()} environment and {clean_weather.lower()} atmosphere. They must look entirely natural and physically grounded within this specific lighting setup, casting accurate contact shadows.\n\n"
+            base_prompt += f"- Integrated seamlessly {placement} are {num_people} people wearing {attire}, {facing_direction}.\n"
+            base_prompt += "- HYPER-DETAILED FACES: Facial features must be rendered in extreme 8k resolution with razor-sharp photographic focus, especially for figures closer to the camera. Skin texture, eyes, and micro-details must look like a raw, high-end studio portrait. No smooth, blurry, or low-res CGI faces.\n"
+            base_prompt += f"- The human subjects must be lit perfectly in conjunction with the selected {clean_time.lower()} environment and {clean_weather.lower()} atmosphere, casting accurate contact shadows.\n\n"
         else:
             base_prompt += "**[SUBJECTS & PEOPLE]**\n- No human subjects present. Focus purely on the architecture.\n\n"
         
@@ -339,7 +339,7 @@ with tab1:
             if scene_type == "Interior":
                 base_prompt += f"- The view outside the windows and the quality of the light reflect {clean_weather.lower()} conditions.\n"
             else:
-                base_prompt += f"- The atmospheric conditions feature {clean_weather.lower()}. CRITICAL: Atmospheric effects like mist, haze, or fog must strictly remain volumetric light scatter and MUST NOT alter, morph, or redesign the physical geometry of the building or its lighting fixtures.\n"
+                base_prompt += f"- The atmospheric conditions feature {clean_weather.lower()}. Any atmospheric effects like mist or haze must strictly remain volumetric light scatter and must not alter the physical geometry of the building.\n"
         
         clean_color = color_grade.split(" (")[0]
         if clean_color != "Natural Realism":
