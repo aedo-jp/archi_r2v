@@ -385,6 +385,27 @@ with tab1:
         clean_color = color_grade.split(" (")[0]
         clean_lens = lens_choice.split(" —")[0]
 
+        # --- Full Kelvin-explicit artificial light descriptions for prompt injection ---
+        artificial_light_prompt = {
+            "Match Natural Environment (Default)": None,
+            "Warm White (2700K - 3000K)": (
+                "Warm White at 2700K–3000K. This produces a yellowish-orange, candlelight-adjacent "
+                "glow. Walls and surfaces adjacent to these fixtures should take on a warm amber "
+                "cast. Shadows have warm undertones. The overall mood is cosy and residential."
+            ),
+            "Neutral White (4000K)": (
+                "Neutral White at precisely 4000K. This is a clean, pure white light with no "
+                "warm or cool bias — not yellowish, not bluish. Surfaces lit by these fixtures "
+                "appear their true colour without any colour cast. The mood is crisp and modern. "
+                "4000K is the industry standard for contemporary architecture, retail, and offices."
+            ),
+            "Cool Daylight White (5000K - 6000K)": (
+                "Cool Daylight White at 5000K–6000K. This produces a bright, slightly bluish-white "
+                "light that mimics overcast daylight. Surfaces take on a cool, clinical tone. "
+                "The mood is sharp, clean, and high-visibility."
+            ),
+        }
+
         # --- Extract approximate focal length mm for camera block ---
         focal_mm_map = {
             "24mm": "24mm",
@@ -476,12 +497,16 @@ with tab1:
                         "Maintain existing fixture geometry perfectly without adding new artificial lights.\n"
                     )
 
-        if clean_artificial != "Match Natural Environment":
+        kelvin_description = artificial_light_prompt.get(artificial_light)
+        if kelvin_description:
             prompt += (
-                f"- CRITICAL COLOUR TEMPERATURE: All artificial interior lighting fixtures "
-                f"(pendant globes, downlights, cove lighting, sconces) must specifically emit "
-                f"a {clean_artificial.lower()} colour temperature. This must be visually consistent "
-                "across every fixture in the scene.\n"
+                f"- CRITICAL COLOUR TEMPERATURE — ARTIFICIAL LIGHTING: All artificial interior "
+                f"lighting fixtures (pendant globes, downlights, cove lighting, sconces, floor "
+                f"lamps, and any other electric light source) must emit exactly the following: "
+                f"{kelvin_description} "
+                f"This colour temperature must be visually consistent and physically accurate "
+                f"across every fixture in the scene. Do not approximate or blend with a different "
+                f"colour temperature.\n"
             )
 
         prompt += (
