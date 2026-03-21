@@ -62,8 +62,8 @@ desc_render = {
 }
 
 desc_color = {
-    "Natural Realism": "Unfiltered, raw color output. Looks like a standard high-quality digital photograph.",
     "Architectural Crisp (Perfectly neutral white balance, cool daylight tones, accurate whites)": "Strips away warm tints, ensuring white walls look purely white. The industry standard for modern architectural portfolios.",
+    "Natural Realism": "Unfiltered, raw color output. Looks like a standard high-quality digital photograph.",
     "Bright & Airy (High key, diffused cool lighting)": "Overexposes the image slightly and lowers contrast for a light, breezy, and optimistic feel (often used in Scandi design).",
     "Cinematic (Rich Saturation, Crisp Sharpness)": "Boosts colors and edge sharpness to look like a frame from a high-budget Hollywood film.",
     "Moody & Dramatic (Deep Shadows, Desaturated)": "Pulls color out of the image and deepens shadows for a brooding, intense, and highly stylized look."
