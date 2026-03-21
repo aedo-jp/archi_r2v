@@ -191,7 +191,7 @@ with tab1:
     if "repopulate_people" not in st.session_state:
         st.session_state.repopulate_people = False
 
-    repopulate_rendered_people = st.checkbox("Repopulate existing rendered figures with photorealistic subjects.", help="Check this box to replace all existing people in the scene with photorealistic versions in their same locations. This disables the other inputs below.")
+    repopulate_rendered_people = st.checkbox("Repopulate existing rendered figures with photorealistic subjects.", help="Check this box if fake-looking CGI people are already in the scene and you want to replace them in their exact positions. This disables the other inputs below.")
     
     if repopulate_rendered_people != st.session_state.repopulate_people:
         st.session_state.repopulate_people = repopulate_rendered_people
@@ -317,17 +317,17 @@ with tab1:
         else:
             base_prompt += "- CRITICAL MATERIAL INSTRUCTION: Retain all original architectural materials perfectly. Elevate them to hyper-realistic, natural textures and physically based rendering (PBR) quality.\n\n"
             
-        # 4. SUBJECTS (UPDATED WITH SIMPLIFIED, POSITIVE LOGIC)
+        # 4. SUBJECTS (UPDATED FOR SAFETY POLICY COMPLIANCE)
         if repopulate_rendered_people:
             base_prompt += "**[SUBJECTS & PEOPLE: REPOPULATE]**\n"
-            base_prompt += "- CRITICAL PEOPLE REPLACEMENT: Identify all people currently present in the original image. Use their exact silhouettes as masks to paint over them ENTIRELY with high-end, photorealistic human subjects.\n"
-            base_prompt += "- Ensure all human subjects possess flawless, highly detailed photorealistic faces, with all facial features accurately reproduced in sharp focus. All details of their clothing, skin, and pose must be photo-perfect and highly realistic.\n"
+            base_prompt += "- CRITICAL PEOPLE REPLACEMENT: Identify all people currently present in the original image. Use their exact silhouettes as masks to paint over them ENTIRELY with highly realistic but generic, everyday human subjects.\n"
+            base_prompt += "- Ensure all human subjects look like diverse, anonymous, everyday people. Their faces and features must be natural and photo-realistic, but completely unrecognizable and non-specific. Do NOT generate anyone who looks like a prominent or recognizable person. All details of their clothing, skin, and pose must be realistic.\n"
             base_prompt += "- CRITICAL POSITION LOCK: You must maintain the exact positions, scale, and locations of every person exactly as they appear in the original render.\n"
             base_prompt += f"- The human subjects must be lit perfectly in conjunction with the selected {clean_time.lower()} environment and {clean_weather.lower()} atmosphere. They must look entirely natural and physically grounded within this specific lighting setup, casting accurate contact shadows.\n\n"
             
         elif num_people > 0:
             base_prompt += "**[SUBJECTS & PEOPLE: ADD]**\n"
-            base_prompt += f"- Integrated seamlessly {placement} are {num_people} people wearing {attire}, {facing_direction}. Ensure all subjects possess flawless, highly detailed photorealistic faces, with all facial features accurately reproduced in sharp focus.\n"
+            base_prompt += f"- Integrated seamlessly {placement} are {num_people} generic, everyday people wearing {attire}, {facing_direction}. Ensure all subjects look like diverse, anonymous individuals with natural, realistic faces. Do NOT generate anyone recognizable or prominent.\n"
             base_prompt += f"- The human subjects must be lit perfectly in conjunction with the selected {clean_time.lower()} environment and {clean_weather.lower()} atmosphere. They must look entirely natural and physically grounded within this specific lighting setup, casting accurate contact shadows.\n\n"
         else:
             base_prompt += "**[SUBJECTS & PEOPLE]**\n- No human subjects present. Focus purely on the architecture.\n\n"
