@@ -410,9 +410,11 @@ with tab1:
             "from street level. The view does not change.\n"
             f"- Treat the uploaded image as a locked compositional blueprint. "
             f"Elevate every element within it to physically real, photographic {scene_type.lower()} "
-            "quality. Replace all illustrative, stylised, or synthetic CGI surface qualities "
-            "with physically plausible materials, lighting, and human subjects — "
-            "but never alter the geometry, layout, or viewpoint.\n"
+            "quality. Every material, surface finish, colour, and structural element identified "
+            "in the uploaded image is fixed — enhance its photographic fidelity but do not "
+            "change its identity, colour, type, or location. The only things being upgraded "
+            "are surface quality, lighting realism, and human subject quality. "
+            "Nothing else changes.\n"
             "- PERSPECTIVE LOCK: The camera angle, focal length, horizon line, field of view, "
             "and framing must be pixel-identical to the reference. "
             "Do not reframe, zoom, crop, rotate, or shift the viewpoint in any direction.\n"
@@ -508,7 +510,25 @@ with tab1:
         # ==========================================
         # BLOCK 4: PHYSICAL GEOMETRY & MATERIALS
         # ==========================================
-        prompt += "**[PHYSICAL GEOMETRY & MATERIALS]**\n"
+        prompt += "**[PHYSICAL GEOMETRY & MATERIALS — LOCKED TO REFERENCE IMAGE]**\n"
+
+        prompt += (
+            "- MATERIAL LOCK — NON-NEGOTIABLE: Every material visible in the uploaded image "
+            "is fixed and must appear in the output in the exact same location, covering the "
+            "exact same surfaces. Do not invent new materials. Do not substitute, swap, "
+            "reinterpret, or creatively reimagine any material. Do not change any colour, "
+            "finish, or surface type. If the uploaded image shows white painted concrete, "
+            "the output shows white painted concrete — not off-white, not render, not plaster. "
+            "If the uploaded image shows dark timber cladding, the output shows dark timber "
+            "cladding — not light timber, not composite panels. Every material is identified "
+            "directly from the uploaded image and reproduced faithfully.\n"
+            "- THE ONLY CHANGE PERMITTED TO MATERIALS is an enhancement of their physical "
+            "surface quality — adding photorealistic micro-texture, natural surface grain, "
+            "physically accurate light response, and subtle real-world imperfection to make "
+            "each material look as though it was photographed in real life rather than rendered "
+            "in a computer. The material identity itself — its colour, type, finish, and "
+            "location — must not change.\n"
+        )
 
         if st.session_state.analysis_text:
             prompt += (
@@ -518,26 +538,32 @@ with tab1:
 
         if valid_mat_changes:
             prompt += (
-                "- Retain all original architectural materials perfectly, EXCEPT for the following "
-                "explicit replacements:\n"
+                "- The only permitted material changes are the following explicit user-specified "
+                "substitutions. All other materials remain locked to the reference image:\n"
             )
             for change in valid_mat_changes:
                 prompt += f"  * REPLACE '{change['from']}' WITH '{change['to']}'\n"
-        else:
-            prompt += "- Retain all original architectural materials perfectly.\n"
 
         prompt += (
-            "- MATERIAL PHYSICS: All surfaces must exhibit physically accurate light response. "
-            "Glass has internal reflections and slight transmission distortion. Metal shows "
-            "directional brushing or casting grain. Stone and timber have micro-surface variation — "
-            "no visible tiling pattern artefacts. Fabric has visible weave structure and soft "
-            "draping shadows at folds.\n"
-            "- SURFACE REALISM: Apply natural surface imperfections to all materials — "
-            "fingerprints near glass handles, slight edge wear on high-traffic flooring, "
-            "natural dust settling on horizontal ledges. Not dirty — lived-in and authentic.\n"
-            "- True-to-life textures throughout: wood grain, metal brushing, plastic sheen, "
-            "glass reflectivity, and stone granularity must all be physically plausible.\n\n"
+            "- MATERIAL SURFACE ENHANCEMENT (enhancement only — no substitution): "
+            "For each material identified in the uploaded image, enhance its surface fidelity "
+            "as follows — Glass: add physically accurate internal reflections, slight surface "
+            "tension, and transmission distortion while keeping its exact colour and opacity. "
+            "Metal: reveal directional brushing, casting grain, or polish consistent with the "
+            "metal finish already visible in the reference. Timber: resolve individual wood "
+            "grain, knot structure, and natural colour variation within the same species and "
+            "tone already present. Stone or concrete: add micro-surface granularity, aggregate "
+            "variation, and natural joint weathering consistent with what is already shown. "
+            "Fabric or soft furnishings: add visible weave structure and soft fold shadows. "
+            "In every case, the enhancement must be invisible as a change — it must feel like "
+            "the same material photographed at higher resolution, not a different material.\n"
+            "- SURFACE IMPERFECTIONS: Apply only the level of weathering, patina, and "
+            "imperfection that is already implied by the reference image. Do not add heavy "
+            "ageing, staining, or damage that is not present or suggested in the original. "
+            "Subtle lived-in character only — fingerprints near handles, slight edge wear on "
+            "high-traffic surfaces, natural dust on horizontal ledges.\n\n"
         )
+
 
         # ==========================================
         # BLOCK 5: SUBJECTS & PEOPLE
