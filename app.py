@@ -196,9 +196,10 @@ with tab1:
     col3, col4 = st.columns(2)
     
     with col3:
+        # UPDATED: More specific daylight options to avoid unwanted warmth
         time_of_day = st.selectbox("Time of Day / Lighting Scenario", [
-            "Morning", 
-            "Midday", 
+            "Morning (Warm angled sunlight)", 
+            "Midday (Bright, neutral/cool white daylight)", 
             "Golden Hour/Sunset", 
             "Twilight / Blue Hour", 
             "Night",
@@ -232,11 +233,13 @@ with tab1:
             "Long exposure photography style"
         ])
         
+        # UPDATED: Added "Architectural Crisp" and modified "Bright & Airy"
         color_grade = st.selectbox("Color Grade", [
             "Natural Realism",
+            "Architectural Crisp (Perfectly neutral white balance, cool daylight tones, accurate whites)",
+            "Bright & Airy (High key, diffused cool lighting)",
             "Cinematic (Rich Saturation, Crisp Sharpness)",
-            "Moody & Dramatic (Deep Shadows, Desaturated)",
-            "Light & Airy (Low Contrast, Bright)"
+            "Moody & Dramatic (Deep Shadows, Desaturated)"
         ])
     
     # Generate Button
@@ -258,14 +261,14 @@ with tab1:
             base_prompt += "- The time of day is night, featuring an intimate, moody evening party atmosphere.\n"
             base_prompt += "- CRITICAL FIXTURE LOCK & LIGHTING RULE: All overhead ceiling downlights, recessed lights, and bright spotlights MUST be completely turned OFF. The space is illuminated exclusively by existing low-level ambient lighting, floor lamps, wall sconces, and indirect cove lighting present in the original design. Do NOT invent new party lights, string lights, or disco balls. Maintain original fixture geometry perfectly, just change which ones are emitting light to create a dim, moody environment.\n"
         else:
-            base_prompt += f"- The time of day is {time_of_day}.\n"
+            base_prompt += f"- The lighting scenario is {time_of_day}.\n"
             if time_of_day in ["Twilight / Blue Hour", "Night"]:
                  base_prompt += "- CRITICAL FIXTURE LOCK: The exact physical design, shape, and architectural style of the existing lighting fixtures MUST be strictly preserved. Do NOT alter their appearance, morph them into generic lamps, or invent new light sources. Increase the luminosity of the existing architectural lights to beautifully illuminate the space while maintaining their exact original geometry.\n"
             else:
                  if scene_type == "Interior":
-                     base_prompt += f"- The interior is illuminated beautifully by natural {time_of_day} light streaming in through the windows, alongside balanced existing interior fixtures. The exact physical design and shape of all light fixtures MUST be strictly preserved.\n"
+                     base_prompt += f"- The interior is illuminated beautifully by natural {time_of_day.lower()} streaming in through the windows, alongside balanced existing interior fixtures. The exact physical design and shape of all light fixtures MUST be strictly preserved.\n"
                  else:
-                     base_prompt += f"- Utilize natural environmental light matching the {time_of_day}. Do NOT add new artificial light fixtures to the architecture. Maintain original fixture geometry perfectly.\n"
+                     base_prompt += f"- Utilize natural environmental light matching the {time_of_day.lower()}. Do NOT add new artificial light fixtures to the architecture. Maintain original fixture geometry perfectly.\n"
         
         if rendering_style != "Standard Photorealistic PBR":
             base_prompt += f"- Rendered utilizing {rendering_style.lower()} and full global illumination to ensure natural, realistic light bounce throughout the scene, naturally softening shadows.\n"
@@ -289,7 +292,7 @@ with tab1:
         else:
             base_prompt += "- CRITICAL MATERIAL INSTRUCTION: Retain all original architectural materials perfectly. Elevate them to hyper-realistic, natural textures and physically based rendering (PBR) quality.\n\n"
             
-        # 4. SUBJECTS (Aggressive Photo-Replacement)
+        # 4. SUBJECTS
         if repopulate_rendered_people:
             base_prompt += "**[SUBJECTS & PEOPLE: REPOPULATE]**\n"
             base_prompt += "- CRITICAL PEOPLE REPLACEMENT: Identify all existing CGI-looking or low-detail people figures present in the original geometry. Treat them strictly as placeholder masks for complete photo-painting. Do NOT attempt to improve or enhance the old figures. Instead, paint them over ENTIRELY with high-end, photorealistic human subjects.\n"
