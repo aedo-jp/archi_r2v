@@ -270,76 +270,80 @@ with tab1:
         clean_time = time_of_day.split(" (")[0]
         clean_weather = weather.split(" (")[0]
         
-        # --- BUILDING THE STRUCTURED PROMPT FOR NANO BANANA PRO / MIDJOURNEY STYLE ---
+        # --- BUILDING THE STRUCTURED PROMPT WITH REFERENCE LANGUAGE ---
         
-        # 1. BASE AND PERSPECTIVE (Softer, photography-based locking)
-        base_prompt = f"**[BASE]**\n- A high-resolution, photorealistic {scene_type.lower()} architectural photograph.\n\n"
+        # 1. BASE AND PERSPECTIVE (Now integrating the reference language)
+        base_prompt = f"**[BASE]**\n- Treat the uploaded image as a compositional reference only and reconstruct it as a high-fidelity real-world {scene_type.lower()} photograph.\n"
+        base_prompt += "- Replace all illustrative, stylized, or synthetic CGI features with physically plausible forms and proportions.\n"
+        base_prompt += "- The final image should read unmistakably as a candid or editorial photograph captured by a real camera, not a digital illustration or render.\n\n"
         
-        base_prompt += "**[CAMERA & PERSPECTIVE]**\n- Maintain the exact composition, framing, camera angle, and structural geometry of the reference image perfectly.\n\n"
-        
-        # 2. LIGHTING & FIXTURES
+        # 2. LIGHTING & FIXTURES (Integrating "accurate reflections" and "shadow falloff")
         base_prompt += "**[LIGHTING & FIXTURES]**\n"
         if time_of_day == "Evening Party (Moody, Downlights OFF)":
             base_prompt += "- The lighting is an intimate, moody evening party atmosphere at night.\n"
-            base_prompt += "- All overhead ceiling downlights and bright spotlights are completely turned OFF. The space is illuminated beautifully by the existing low-level ambient lighting, floor lamps, and indirect cove lighting present in the design. Do not add string lights or party decor; just use the existing architecture to create a dim, moody environment.\n"
+            base_prompt += "- All overhead ceiling downlights and bright spotlights are completely turned OFF. The space is illuminated beautifully by the existing low-level ambient lighting, floor lamps, and indirect cove lighting present in the design. Do not add string lights or party decor.\n"
         else:
             base_prompt += f"- The lighting scenario is {clean_time}.\n"
             if "Night" in time_of_day or "Twilight" in time_of_day:
-                 base_prompt += "- Maintain the exact physical design of the existing lighting fixtures. Do not alter their shape or invent new lamps. Beautifully increase the luminosity and glow of the existing architectural lights to illuminate the space.\n"
+                 base_prompt += "- Maintain the exact physical design of the existing lighting fixtures. Do not alter their shape. Beautifully increase the luminosity and glow of the existing architectural lights to illuminate the space.\n"
             else:
                  if scene_type == "Interior":
                      base_prompt += f"- The interior is illuminated beautifully by natural {clean_time.lower()} streaming in through the windows, alongside balanced existing interior fixtures.\n"
                  else:
                      base_prompt += f"- Utilize natural environmental light matching the {clean_time.lower()}. Maintain the existing fixture geometry perfectly without adding new artificial lights.\n"
         
+        # Apply universal real-world lighting characteristics
+        base_prompt += "- Apply natural shadow falloff, accurate reflections, and subtle exposure variation across the scene.\n"
+        
         clean_render = rendering_style.split(" (")[0]
         if clean_render != "Standard Photorealistic PBR":
-            base_prompt += f"- Rendered utilizing {clean_render.lower()} and full global illumination to ensure natural, realistic light bounce and softness throughout the scene.\n"
-        else:
-            base_prompt += "- Rendered with full global illumination to ensure natural, realistic light bounce and softness throughout the scene.\n"
-        
+            base_prompt += f"- Rendered utilizing {clean_render.lower()} and full global illumination to ensure natural light bounce.\n"
+            
         clean_shadow = shadow_quality.split(" (")[0]
         if clean_shadow != "Standard realistic shadows":
             base_prompt += f"- Ensure the lighting features {clean_shadow.lower()}.\n"
         base_prompt += "\n"
             
-        # 3. GEOMETRY & MATERIALS
+        # 3. GEOMETRY & MATERIALS (Integrating "true-to-life textures" and "surface imperfections")
         base_prompt += "**[PHYSICAL GEOMETRY & MATERIALS]**\n"
         if st.session_state.analysis_text:
             base_prompt += f"- The precise physical {scene_type.lower()} scene consists of: {st.session_state.analysis_text}\n"
             
         if valid_mat_changes:
-            base_prompt += "- Retain all original architectural materials perfectly and elevate them to photorealistic PBR quality, EXCEPT for the following explicit replacements:\n"
+            base_prompt += "- Retain all original architectural materials perfectly, EXCEPT for the following explicit replacements:\n"
             for change in valid_mat_changes:
                 base_prompt += f"  * REPLACE '{change['from']}' WITH '{change['to']}'\n"
-            base_prompt += "\n"
+            base_prompt += "- Apply natural surface imperfections and true-to-life textures (wood, metal, plastic, glass, stone as applicable) to all materials.\n\n"
         else:
-            base_prompt += "- Retain all original architectural materials perfectly. Elevate them to hyper-realistic, natural textures and physically based rendering (PBR) quality.\n\n"
+            base_prompt += "- Retain all original architectural materials perfectly. Apply natural surface imperfections and true-to-life textures (wood, metal, plastic, glass, stone as applicable) to elevate them from CGI to reality.\n\n"
             
-        # 4. SUBJECTS (HYPERBOOSTED PHOTOGRAPHY LANGUAGE)
+        # 4. SUBJECTS (Integrating "realistic human anatomy")
         if repopulate_rendered_people:
             base_prompt += "**[SUBJECTS & PEOPLE: REPOPULATE]**\n"
             base_prompt += "- Identify all people currently present in the original image. Paint over them entirely with high-end, photorealistic human subjects.\n"
-            base_prompt += "- HYPER-DETAILED FACES: Facial features must be rendered in extreme 8k resolution with razor-sharp photographic focus, especially for figures closer to the camera. Skin texture, eyes, and micro-details must look like a raw, high-end studio portrait spliced perfectly into the scene. No smooth, blurry, or low-res CGI faces.\n"
+            base_prompt += "- Apply realistic human anatomy, natural surface imperfections, and true-to-life textures for skin, fabric, and hair. Ensure all facial features are accurately reproduced in a high level of photographic detail.\n"
             base_prompt += "- Maintain the exact positions, scale, and locations of every person exactly as they appear in the original render.\n"
-            base_prompt += f"- The human subjects must be lit perfectly in conjunction with the selected {clean_time.lower()} environment and {clean_weather.lower()} atmosphere, casting accurate contact shadows.\n\n"
+            base_prompt += f"- The human subjects must be lit naturally in conjunction with the selected {clean_time.lower()} environment, casting accurate contact shadows.\n\n"
             
         elif num_people > 0:
             base_prompt += "**[SUBJECTS & PEOPLE: ADD]**\n"
             base_prompt += f"- Integrated seamlessly {placement} are {num_people} people wearing {attire}, {facing_direction}.\n"
-            base_prompt += "- HYPER-DETAILED FACES: Facial features must be rendered in extreme 8k resolution with razor-sharp photographic focus, especially for figures closer to the camera. Skin texture, eyes, and micro-details must look like a raw, high-end studio portrait. No smooth, blurry, or low-res CGI faces.\n"
-            base_prompt += f"- The human subjects must be lit perfectly in conjunction with the selected {clean_time.lower()} environment and {clean_weather.lower()} atmosphere, casting accurate contact shadows.\n\n"
+            base_prompt += "- Apply realistic human anatomy, natural surface imperfections, and true-to-life textures for skin, fabric, and hair. Ensure all facial features are accurately reproduced in a high level of photographic detail.\n"
+            base_prompt += f"- The human subjects must be lit naturally in conjunction with the selected {clean_time.lower()} environment, casting accurate contact shadows.\n\n"
         else:
             base_prompt += "**[SUBJECTS & PEOPLE]**\n- No human subjects present. Focus purely on the architecture.\n\n"
         
-        # 5. ATMOSPHERE & RENDERING
-        base_prompt += "**[ATMOSPHERE & RENDERING]**\n"
+        # 5. ATMOSPHERE & CAMERA SENSOR (Integrating the Camera Characteristics)
+        base_prompt += "**[ATMOSPHERE & CAMERA]**\n"
         
         if clean_weather != "Clear / Crisp Air":
             if scene_type == "Interior":
                 base_prompt += f"- The view outside the windows and the quality of the light reflect {clean_weather.lower()} conditions.\n"
             else:
-                base_prompt += f"- The atmospheric conditions feature {clean_weather.lower()}. Any atmospheric effects like mist or haze must strictly remain volumetric light scatter and must not alter the physical geometry of the building.\n"
+                base_prompt += f"- The atmospheric conditions feature {clean_weather.lower()}.\n"
+        
+        # Inject the real camera characteristics to kill the CGI look
+        base_prompt += "- Introduce real camera characteristics such as subtle depth of field, focal length compression, mild lens imperfections, and sensor grain to ground the image in reality.\n"
         
         clean_color = color_grade.split(" (")[0]
         if clean_color != "Natural Realism":
